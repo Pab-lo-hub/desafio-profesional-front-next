@@ -45,8 +45,8 @@ const Buscador = () => {
   CustomInput.displayName = "CustomInput";
 
   return (
-    <div className="pt-20">
-      <div className="mx-auto max-w-2xl sm:px-6 sm:py-24 lg:max-w-7xl">
+    <div className="pt-20 pb-6">
+      <div className="mx-auto max-w-2xl sm:px-6 sm:pt-24 lg:max-w-7xl">
         <form
           onSubmit={handleSubmit}
           className="flex items-center justify-center gap-4"
