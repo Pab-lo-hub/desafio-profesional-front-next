@@ -31,6 +31,8 @@
     "@types/node": "^22.13.11",
     "@types/pg": "^8.11.11",
     "@types/react": "19.0.12",
+    "@typescript-eslint/eslint-plugin": "^8.28.0",
+    "@typescript-eslint/parser": "^8.28.0",
     "eslint": "^9",
     "eslint-config-next": "15.1.6",
     "postcss": "^8",
