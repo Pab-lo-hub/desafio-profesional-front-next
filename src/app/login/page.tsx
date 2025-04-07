@@ -2,9 +2,14 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import LoginForm from "./form";
-import { authOptions } from "../api/auth/[...nextauth]/route"; // Importa authOptions
+import { authOptions } from "../lib/auth"; // Correcto
 
-export default async function LoginPage({ searchParams }: { searchParams: { [key: string]: string | undefined } }) {
+// Define el tipo correcto para las props de la página
+type LoginPageProps = {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>; // searchParams como Promise
+};
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await getServerSession(authOptions);
   console.log({ session });
 
@@ -12,7 +17,7 @@ export default async function LoginPage({ searchParams }: { searchParams: { [key
   if (session && session.user.role === "admin") {
     redirect("/admin");
   }
-  // Si hay sesión pero no es "admin", no redirigir, mostrar login para cerrar sesión o cambiar usuario
+  // Si hay sesión pero no es "admin", no redirigir (mostrar login para cerrar sesión o cambiar usuario)
   // Si no hay sesión, mostrar el formulario de login
 
   return (

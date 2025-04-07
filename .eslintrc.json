@@ -1,18 +1,34 @@
 {
-    "env": {
-      "browser": true,
-      "node": true
-    },
-    "extends": [
-      "next/core-web-vitals",
-      "eslint:recommended",
-      "plugin:@typescript-eslint/recommended"
-    ],
-    "parser": "@typescript-eslint/parser",
-    "parserOptions": {
-      "ecmaVersion": 2020,
-      "sourceType": "module"
-    },
-    "plugins": ["@typescript-eslint"],
-    "rules": {}
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2021": true // Actualiza para soportar características modernas
+  },
+  "extends": [
+    "next/core-web-vitals", // Configuración recomendada por Next.js
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended", // Añade soporte para React
+    "prettier" // Opcional: si usas Prettier, desactiva reglas conflictivas
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": "latest", // Usa "latest" en lugar de 2020 para mayor compatibilidad
+    "sourceType": "module",
+    "project": "./tsconfig.json" // Permite a ESLint usar el archivo tsconfig
+  },
+  "plugins": [
+    "@typescript-eslint",
+    "react"
+  ],
+  "rules": {
+    "react/prop-types": "off", // Desactiva prop-types si usas TypeScript
+    "@typescript-eslint/no-unused-vars": ["error"], // Asegura que variables no usadas sean detectadas
+    "no-console": ["warn"] // Opcional: permite console.log con advertencia
+  },
+  "settings": {
+    "react": {
+      "version": "detect" // Detecta automáticamente la versión de React
+    }
   }
+}
