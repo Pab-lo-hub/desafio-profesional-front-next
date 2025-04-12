@@ -1,6 +1,14 @@
 // next.config.js
-module.exports = {
-    eslint: {
-      ignoreDuringBuilds: true, // Ignora errores de ESLint durante el build
-    },
-  };
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  eslint: {
+    // Ignora errores de ESLint durante la compilación
+    ignoreDuringBuilds: true,
+  },
+  images: {
+    // Dominios permitidos para cargar imágenes con <Image>
+    domains: ["localhost", "tailwindui.com"],
+  },
+};
+
+module.exports = nextConfig;
