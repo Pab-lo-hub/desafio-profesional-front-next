@@ -1,129 +1,193 @@
 // src/app/admin/products/add/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
+import { getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Swal from "sweetalert2";
 
-export default function AddProductPage() {
+interface Categoria {
+  id: number;
+  titulo: string;
+}
+
+export default function AddProduct() {
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
-  const [imagenes, setImagenes] = useState<FileList | null>(null);
+  const [categoriaId, setCategoriaId] = useState<number | null>(null);
+  const [imagenes, setImagenes] = useState<File[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState<string | null>(null);
   const router = useRouter();
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-
-    const formData = new FormData();
-    formData.append("nombre", nombre);
-    formData.append("descripcion", descripcion);
-    if (imagenes) {
-      for (let i = 0; i < imagenes.length; i++) {
-        formData.append("imagenes", imagenes[i]);
+  useEffect(() => {
+    const checkSessionAndFetchCategorias = async () => {
+      try {
+        const session = await getSession();
+        if (!session || session.user.role !== "admin") {
+          router.push("/login");
+          return;
+        }
+        const response = await axios.get<Categoria[]>(`${backendUrl}/api/categorias`);
+        setCategorias(response.data);
+        setLoading(false);
+      } catch (err: any) {
+        setError("No se pudieron cargar las categorías");
+        setLoading(false);
+        console.error("Error fetching categories:", err);
       }
+    };
+    checkSessionAndFetchCategorias();
+  }, [router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (categoriaId !== null && !categorias.some(cat => cat.id === categoriaId)) {
+      Swal.fire({
+        title: "Error",
+        text: "La categoría seleccionada no es válida.",
+        icon: "error",
+      });
+      return;
     }
-
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/productos`,
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
-
-      if (response.status !== 201) throw new Error("Failed to add product");
-      setSuccess("Producto agregado exitosamente");
-      setNombre("");
-      setDescripcion("");
-      setImagenes(null);
-      setTimeout(() => router.push("/admin"), 1500); // Redirige después de 1.5s
+      const formData = new FormData();
+      formData.append("producto", JSON.stringify({ nombre, descripcion }));
+      imagenes.forEach((imagen) => formData.append("imagenes", imagen));
+      if (categoriaId !== null) {
+        formData.append("categoriaId", String(categoriaId));
+      }
+      await axios.post(`${backendUrl}/api/productos`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      await Swal.fire({
+        title: "Éxito",
+        text: "Producto creado correctamente.",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      router.push("/admin/products");
     } catch (err: any) {
-      setError(err.message || "Error al agregar el producto");
-      console.error("Error adding product:", err);
-    } finally {
-      setLoading(false);
+      const message = err.response?.data || "No se pudo crear el producto.";
+      await Swal.fire({
+        title: "Error",
+        text: message,
+        icon: "error",
+      });
+      console.error("Error creating product:", err);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-md">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-          Agregar Nuevo Producto
-        </h1>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Campo Nombre */}
-          <div>
-            <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
-              Nombre del Producto
-            </label>
-            <input
-              id="nombre"
-              name="nombre"
-              type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              required
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              placeholder="Ej. Camiseta Básica"
-            />
-          </div>
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setImagenes(Array.from(e.target.files));
+    }
+  };
 
-          {/* Campo Descripción */}
-          <div>
-            <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700">
-              Descripción
-            </label>
-            <textarea
-              id="descripcion"
-              name="descripcion"
-              value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
-              required
-              rows={4}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              placeholder="Describe el producto..."
-            />
-          </div>
-
-          {/* Campo Imágenes */}
-          <div>
-            <label htmlFor="imagenes" className="block text-sm font-medium text-gray-700">
-              Imágenes
-            </label>
-            <input
-              id="imagenes"
-              name="imagenes"
-              type="file"
-              multiple
-              onChange={(e) => setImagenes(e.target.files)}
-              className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-            />
-          </div>
-
-          {/* Botón de Submit */}
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full py-2 px-4 rounded-md text-white font-semibold ${
-              loading
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            }`}
-          >
-            {loading ? "Guardando..." : "Guardar Producto"}
-          </button>
-
-          {/* Mensajes de Éxito/Error */}
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-          {success && <p className="text-green-500 text-sm text-center">{success}</p>}
-        </form>
+  if (loading) {
+    return (
+      <div className="min-h-screen p-8 text-black">
+        <h1 className="text-3xl font-bold mb-4">Agregar Producto</h1>
+        <p>Cargando...</p>
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen p-8 text-black">
+        <h1 className="text-3xl font-bold mb-4">Agregar Producto</h1>
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen p-8 text-black">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Agregar Producto</h1>
+        <Link href="/admin/products" className="text-gray-600 hover:text-gray-900 flex items-center">
+          <svg
+            className="h-6 w-6 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Volver
+        </Link>
+      </div>
+      <form onSubmit={handleSubmit} className="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-sm">
+        <div className="mb-4">
+          <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
+            Nombre
+          </label>
+          <input
+            type="text"
+            id="nombre"
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            className="mt-1 block w-full border border-gray-300 rounded p-2"
+            required
+          />
+        </div>
+        <div className="mb-4">
+          <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700">
+            Descripción
+          </label>
+          <textarea
+            id="descripcion"
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+            className="mt-1 block w-full border border-gray-300 rounded p-2"
+            rows={4}
+          />
+        </div>
+        <div className="mb-4">
+          <label htmlFor="categoria" className="block text-sm font-medium text-gray-700">
+            Categoría
+          </label>
+          <select
+            id="categoria"
+            value={categoriaId ?? ""}
+            onChange={(e) => setCategoriaId(e.target.value ? Number(e.target.value) : null)}
+            className="mt-1 block w-full border border-gray-300 rounded p-2"
+          >
+            <option value="">Sin categoría</option>
+            {categorias.map((categoria) => (
+              <option key={categoria.id} value={categoria.id}>
+                {categoria.titulo}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="mb-4">
+          <label htmlFor="imagenes" className="block text-sm font-medium text-gray-700">
+            Imágenes
+          </label>
+          <input
+            type="file"
+            id="imagenes"
+            accept="image/*"
+            multiple
+            onChange={handleImageChange}
+            className="mt-1 block w-full"
+          />
+        </div>
+        <button
+          type="submit"
+          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
+        >
+          Crear Producto
+        </button>
+      </form>
     </div>
   );
 }
