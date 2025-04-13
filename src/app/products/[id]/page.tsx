@@ -6,15 +6,22 @@ import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { Dialog, DialogPanel } from "@headlessui/react";
 import Header from "../../Components/Header"; // Importa el componente Header
 import Footer from "../../Components/Footer"; // Importa el componente Footer
+
+// Interfaz que define la estructura de una imagen
+interface ProductImage {
+  id: number; // Identificador único de la imagen
+  ruta: string; // Ruta de la imagen en el backend
+}
 
 // Interfaz que define la estructura de un producto
 interface Product {
   id: number; // Identificador único del producto
   nombre: string; // Nombre del producto
   descripcion: string; // Descripción del producto
-  imagenes: { id: number; ruta: string }[]; // Lista de imágenes asociadas
+  imagenes: ProductImage[]; // Lista de imágenes asociadas
 }
 
 // Interfaz para los props del componente, que incluye los parámetros de la ruta
@@ -22,80 +29,123 @@ interface ProductPageProps {
   params: Promise<{ id: string }>; // params es un Promise en rutas dinámicas
 }
 
-// Componente para el slider de imágenes del producto
-function ProductImageSlider({
+// Componente para la galería de imágenes del producto
+function ProductImageGallery({
   imagenes,
   backendUrl,
 }: {
-  imagenes: { id: number; ruta: string }[]; // Imágenes del producto
+  imagenes: ProductImage[]; // Imágenes del producto
   backendUrl: string; // URL base del backend
 }) {
-  // Estado para controlar el índice de la imagen actual en el slider
-  const [currentIndex, setCurrentIndex] = useState(0);
+  // Estado para controlar si el modal está abierto
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Retrocede a la imagen anterior en el slider
-  const prevSlide = () => {
-    setCurrentIndex((prev) => (prev === 0 ? imagenes.length - 1 : prev - 1));
+  // Abre el modal para ver todas las imágenes
+  const openModal = () => {
+    setIsModalOpen(true);
   };
 
-  // Avanza a la siguiente imagen en el slider
-  const nextSlide = () => {
-    setCurrentIndex((prev) => (prev === imagenes.length - 1 ? 0 : prev + 1));
+  // Cierra el modal
+  const closeModal = () => {
+    setIsModalOpen(false);
   };
 
-  // Cambia a una imagen específica en el slider
-  const goToSlide = (index: number) => {
-    setCurrentIndex(index);
-  };
-
-  // Muestra un mensaje si no hay imágenes disponibles
-  if (imagenes.length === 0) {
-    return <p className="text-gray-500 text-center">No hay imágenes disponibles</p>;
-  }
+  // Obtiene las primeras 5 imágenes (o menos si no hay suficientes)
+  const displayImages = imagenes.slice(0, 5);
+  // Imagen principal (primera imagen o placeholder)
+  const mainImage = displayImages[0] || { id: 0, ruta: "/placeholder.png" };
+  // Imágenes secundarias para la grilla (siguientes 4)
+  const gridImages = displayImages.slice(1, 5);
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto">
-      {/* Contenedor para la imagen actual del slider */}
-      <div className="relative h-96 overflow-hidden rounded-lg">
-        <Image
-          src={`${backendUrl}${imagenes[currentIndex].ruta}`}
-          alt={`Imagen ${currentIndex + 1} de ${imagenes.length}`}
-          fill
-          className="object-cover w-full h-full"
-          sizes="(max-width: 768px) 100vw, 50vw"
-        />
+    <>
+      {/* Contenedor de la galería, ocupa el 100% del ancho */}
+      <div className="w-full">
+        {/* Layout para desktop: imagen principal a la izquierda, grilla a la derecha */}
+        <div className="md:grid md:grid-cols-2 md:gap-4 flex flex-col gap-4">
+          {/* Imagen principal (mitad izquierda en desktop, completa en móvil) */}
+          <div className="relative h-96">
+            <Image
+              src={`${backendUrl}${mainImage.ruta}`}
+              alt="Imagen principal del producto"
+              fill
+              className="object-cover rounded-lg"
+              sizes="(max-width: 768px) 100vw, 50vw"
+            />
+          </div>
+          {/* Grilla 2x2 para las imágenes secundarias (mitad derecha en desktop) */}
+          <div className="grid grid-cols-2 grid-rows-2 gap-4 relative">
+            {gridImages.map((img, index) => (
+              <div key={img.id} className="relative h-44">
+                <Image
+                  src={`${backendUrl}${img.ruta}`}
+                  alt={`Imagen secundaria ${index + 1}`}
+                  fill
+                  className="object-cover rounded-lg"
+                  sizes="(max-width: 768px) 50vw, 25vw"
+                />
+              </div>
+            ))}
+            {/* Rellena la grilla con placeholders si hay menos de 4 imágenes */}
+            {gridImages.length < 4 &&
+              Array.from({ length: 4 - gridImages.length }).map((_, index) => (
+                <div key={`placeholder-${index}`} className="relative h-44">
+                  <Image
+                    src="/placeholder.png"
+                    alt="Placeholder"
+                    fill
+                    className="object-cover rounded-lg opacity-50"
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                  />
+                </div>
+              ))}
+            {/* Botón "Ver más" en la esquina inferior derecha */}
+            {imagenes.length > 5 && (
+              <button
+                onClick={openModal}
+                className="absolute bottom-2 right-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 focus:outline-none"
+              >
+                Ver más
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Botones de navegación (solo si hay más de una imagen) */}
-      {imagenes.length > 1 && (
-        <>
-          <button
-            onClick={prevSlide}
-            className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-gray-800 bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 focus:outline-none"
-          >
-            ❮
-          </button>
-          <button
-            onClick={nextSlide}
-            className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-gray-800 bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 focus:outline-none"
-          >
-            ❯
-          </button>
-          {/* Indicadores de puntos para navegar entre imágenes */}
-          <div className="flex justify-center mt-4 space-x-2">
-            {imagenes.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => goToSlide(index)}
-                className={`w-3 h-3 rounded-full ${
-                  index === currentIndex ? "bg-indigo-600" : "bg-gray-300"
-                }`}
-              />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+      {/* Modal para ver todas las imágenes */}
+      <Dialog open={isModalOpen} onClose={closeModal} className="relative z-50">
+        {/* Fondo oscuro del modal */}
+        <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
+        {/* Contenedor del modal */}
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel className="max-w-3xl w-full bg-white rounded-lg p-6 max-h-[80vh] overflow-y-auto">
+            {/* Título del modal */}
+            <h2 className="text-xl font-semibold mb-4">Todas las imágenes</h2>
+            {/* Lista de todas las imágenes */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {imagenes.map((img) => (
+                <div key={img.id} className="relative h-64">
+                  <Image
+                    src={`${backendUrl}${img.ruta}`}
+                    alt={`Imagen ${img.id}`}
+                    fill
+                    className="object-cover rounded-lg"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                  />
+                </div>
+              ))}
+            </div>
+            {/* Botón para cerrar el modal */}
+            <button
+              onClick={closeModal}
+              className="mt-4 w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 focus:outline-none"
+            >
+              Cerrar
+            </button>
+          </DialogPanel>
+        </div>
+      </Dialog>
+    </>
   );
 }
 
@@ -205,12 +255,12 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
                   Volver
                 </Link>
               </div>
-              {/* Cuerpo con descripción y slider */}
+              {/* Cuerpo con descripción y galería */}
               <div>
                 {/* Descripción del producto */}
                 <p className="text-gray-700 mb-6">{product.descripcion}</p>
-                {/* Slider de imágenes del producto */}
-                <ProductImageSlider imagenes={product.imagenes} backendUrl={backendUrl} />
+                {/* Galería de imágenes del producto */}
+                <ProductImageGallery imagenes={product.imagenes} backendUrl={backendUrl} />
               </div>
             </div>
           </div>
