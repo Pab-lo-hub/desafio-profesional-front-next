@@ -36,7 +36,7 @@ const Buscador = () => {
         onClick={onClick}
         ref={ref}
         readOnly
-        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-32 pl-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-32 pl-10 p-2.5 bg-[#fef5e4] dark:border-gray-400 dark:placeholder-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
         placeholder={placeholder}
       />
     </div>
@@ -73,7 +73,7 @@ const Buscador = () => {
             <input
               type="search"
               id="default-search"
-              className="block w-full p-2.5 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              className="block w-full p-2.5 pl-10 text-sm text-dark-600 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 bg-[#fef5e4] dark:border-gray-400 dark:placeholder-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
               placeholder="Buscar..."
               required
             />
@@ -105,7 +105,7 @@ const Buscador = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+            className="text-white bg-[#786e64] hover:bg-grey-400 dark:bg-[#2B7B8C] focus:ring-4 focus:outline-none focus:ring-blue-200 font-medium rounded-lg text-sm px-4 py-2.5 dark:bg-[#2B7B8C] dark:hover:bg-gray-600 dark:focus:ring-blue-800"
           >
             Buscar
           </button>

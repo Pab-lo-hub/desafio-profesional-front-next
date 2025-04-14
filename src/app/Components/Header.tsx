@@ -27,8 +27,8 @@ import Image from "next/image";
 
 // Lista de productos para el menú desplegable
 const products = [
-  { name: "Analytics", description: "Get a better understanding of your traffic", href: "#", icon: ChartPieIcon },
-  { name: "Engagement", description: "Speak directly to your customers", href: "#", icon: CursorArrowRaysIcon },
+  { name: "Categorías", description: "Get a better understanding of your traffic", href: "#", icon: ChartPieIcon },
+  { name: "Productos", description: "Speak directly to your customers", href: "#", icon: CursorArrowRaysIcon },
   { name: "Security", description: "Your customers’ data will be safe and secure", href: "#", icon: FingerPrintIcon },
   { name: "Integrations", description: "Connect with third-party tools", href: "#", icon: SquaresPlusIcon },
   { name: "Automations", description: "Build strategic funnels that will convert", href: "#", icon: ArrowPathIcon },
@@ -84,7 +84,7 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
           <Popover className="relative">
             {/* Botón para el menú desplegable de productos */}
             <PopoverButton className="flex items-center gap-x-1 text-sm/6 font-semibold text-gray-900">
-              Product
+              Panel
               <ChevronDownIcon aria-hidden="true" className="size-5 flex-none text-gray-400" />
             </PopoverButton>
             {/* Panel del menú desplegable */}
@@ -129,13 +129,13 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
             </PopoverPanel>
           </Popover>
           <a href="#" className="text-sm/6 font-semibold text-gray-900">
-            Features
+            Productos
           </a>
           <a href="#" className="text-sm/6 font-semibold text-gray-900">
-            Marketplace
+            Categorias
           </a>
           <a href="#" className="text-sm/6 font-semibold text-gray-900">
-            Company
+            Contacto
           </a>
         </PopoverGroup>
         {/* Botones de acción para pantallas grandes */}
