@@ -8,34 +8,24 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Swal from "sweetalert2";
 
-// Interfaz para la estructura de una categoría
 interface Categoria {
-  id: number;
+  id: number | string;
   titulo: string;
 }
 
 /**
  * Componente para crear un nuevo producto en el panel de administración.
- * Permite especificar nombre, descripción, categoría (opcional) e imágenes.
+ * Usa ProductoDTO para la comunicación con el backend.
  */
 export default function AddProduct() {
-  // Estado para el nombre del producto
   const [nombre, setNombre] = useState("");
-  // Estado para la descripción del producto
   const [descripcion, setDescripcion] = useState("");
-  // Estado para el ID de la categoría seleccionada (nullable)
-  const [categoriaId, setCategoriaId] = useState<number | null>(null);
-  // Estado para las imágenes subidas
+  const [categoriaId, setCategoriaId] = useState<number | string | null>(null);
   const [imagenes, setImagenes] = useState<File[]>([]);
-  // Estado para la lista de categorías disponibles
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  // Estado para indicar si se está cargando
   const [loading, setLoading] = useState(true);
-  // Estado para manejar errores
   const [error, setError] = useState<string | null>(null);
-  // Hook de enrutamiento de Next.js
   const router = useRouter();
-  // URL del backend desde variables de entorno
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
   /**
@@ -51,13 +41,20 @@ export default function AddProduct() {
           router.push("/login");
           return;
         }
-        const response = await axios.get<Categoria[]>(`${backendUrl}/api/categorias`);
-        setCategorias(response.data);
+        try {
+          const response = await axios.get<Categoria[]>(`${backendUrl}/api/categorias`, {
+            headers: { Authorization: `Basic ${btoa("admin:admin123")}` },
+          });
+          setCategorias(response.data);
+        } catch (catError: any) {
+          console.error("Error fetching categories:", catError);
+          setError("No se pudieron cargar las categorías. Intenta de nuevo.");
+        }
         setLoading(false);
       } catch (err: any) {
-        setError("No se pudieron cargar las categorías");
+        setError("No se pudo verificar la sesión");
         setLoading(false);
-        console.error("Error fetching categories:", err);
+        console.error("Error checking session:", err);
       }
     };
     checkSessionAndFetchCategorias();
@@ -65,13 +62,13 @@ export default function AddProduct() {
 
   /**
    * Maneja el envío del formulario para crear un producto.
-   * Valida categoriaId y envía los datos al backend.
+   * Envía datos compatibles con ProductoDTO.
    * @param {React.FormEvent} e - Evento del formulario
    * @returns {Promise<void>}
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (categoriaId !== null && !categorias.some((cat) => cat.id === categoriaId)) {
+    if (categoriaId !== null && !categorias.some((cat) => String(cat.id) === String(categoriaId))) {
       Swal.fire({
         title: "Error",
         text: "La categoría seleccionada no es válida.",
@@ -81,14 +78,20 @@ export default function AddProduct() {
     }
     try {
       const formData = new FormData();
-      formData.append("producto", JSON.stringify({ nombre, descripcion }));
+      formData.append(
+        "producto",
+        new Blob([JSON.stringify({ nombre, descripcion })], { type: "application/json" })
+      );
       imagenes.forEach((imagen) => formData.append("imagenes", imagen));
-      if (categoriaId !== null) {
-        formData.append("categoriaId", String(categoriaId));
-      }
-      await axios.post(`${backendUrl}/api/productos`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+
+      const url = categoriaId !== null
+        ? `${backendUrl}/api/productos?categoriaId=${categoriaId}`
+        : `${backendUrl}/api/productos`;
+
+      await axios.post(url, formData, {
+        headers: { Authorization: `Basic ${btoa("admin:admin123")}` },
       });
+
       await Swal.fire({
         title: "Éxito",
         text: "Producto creado correctamente.",
@@ -119,7 +122,6 @@ export default function AddProduct() {
     }
   };
 
-  // Renderiza el estado de carga
   if (loading) {
     return (
       <div className="min-h-screen p-8 text-black">
@@ -129,7 +131,6 @@ export default function AddProduct() {
     );
   }
 
-  // Renderiza el estado de error
   if (error) {
     return (
       <div className="min-h-screen p-8 text-black">
@@ -139,7 +140,6 @@ export default function AddProduct() {
     );
   }
 
-  // Renderiza el formulario de creación
   return (
     <div className="min-h-screen p-8 text-black">
       <div className="flex justify-between items-center mb-6">
@@ -190,8 +190,9 @@ export default function AddProduct() {
           <select
             id="categoria"
             value={categoriaId ?? ""}
-            onChange={(e) => setCategoriaId(e.target.value ? Number(e.target.value) : null)}
+            onChange={(e) => setCategoriaId(e.target.value ? e.target.value : null)}
             className="mt-1 block w-full border border-gray-300 rounded p-2"
+            disabled={categorias.length === 0}
           >
             <option value="">Sin categoría</option>
             {categorias.map((categoria) => (
@@ -200,6 +201,9 @@ export default function AddProduct() {
               </option>
             ))}
           </select>
+          {categorias.length === 0 && (
+            <p className="text-red-500 text-sm mt-1">No se pudieron cargar las categorías</p>
+          )}
         </div>
         <div className="mb-4">
           <label htmlFor="imagenes" className="block text-sm font-medium text-gray-700">

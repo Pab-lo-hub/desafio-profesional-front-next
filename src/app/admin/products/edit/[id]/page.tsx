@@ -8,45 +8,37 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import Swal from "sweetalert2";
 
-// Interfaz para la estructura de una categoría
 interface Categoria {
-  id: number;
+  id: number | string;
   titulo: string;
 }
 
-// Interfaz para la estructura de un producto
+/**
+ * Interfaz para Producto, alineada con ProductoDTO del backend.
+ */
 interface Producto {
-  id: number;
+  id: number | string;
   nombre: string;
-  descripcion: string;
-  categoria?: { id: number; titulo: string };
+  descripcion?: string;
+  categoria?: { id: number | string; titulo: string };
+  imagenes?: { id: number | string; ruta: string }[];
 }
 
 /**
  * Componente para editar un producto existente en el panel de administración.
- * Permite modificar nombre, descripción, categoría e imágenes.
+ * Usa ProductoDTO para la comunicación con el backend.
  */
 export default function EditProduct() {
-  // Estado para el nombre del producto
   const [nombre, setNombre] = useState("");
-  // Estado para la descripción del producto
   const [descripcion, setDescripcion] = useState("");
-  // Estado para el ID de la categoría seleccionada
-  const [categoriaId, setCategoriaId] = useState<number | null>(null);
-  // Estado para las nuevas imágenes subidas
+  const [categoriaId, setCategoriaId] = useState<number | string | null>(null);
   const [imagenes, setImagenes] = useState<File[]>([]);
-  // Estado para la lista de categorías disponibles
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  // Estado para indicar si se está cargando
   const [loading, setLoading] = useState(true);
-  // Estado para manejar errores
   const [error, setError] = useState<string | null>(null);
-  // Hook de enrutamiento de Next.js
   const router = useRouter();
-  // Obtiene el ID del producto desde los parámetros de la URL
   const params = useParams();
   const id = params.id;
-  // URL del backend desde variables de entorno
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
   /**
@@ -71,14 +63,19 @@ export default function EditProduct() {
         setCategoriaId(producto.categoria ? producto.categoria.id : null);
 
         // Obtener categorías
-        const categoriasResponse = await axios.get<Categoria[]>(`${backendUrl}/api/categorias`);
-        setCategorias(categoriasResponse.data);
+        try {
+          const categoriasResponse = await axios.get<Categoria[]>(`${backendUrl}/api/categorias`);
+          setCategorias(categoriasResponse.data);
+        } catch (catError) {
+          console.error("Error fetching categories:", catError);
+          setCategorias([]);
+        }
 
         setLoading(false);
       } catch (err: any) {
-        setError("No se pudo cargar el producto o las categorías");
+        setError("No se pudo cargar el producto");
         setLoading(false);
-        console.error("Error fetching data:", err);
+        console.error("Error fetching product:", err);
       }
     };
     fetchData();
@@ -86,7 +83,7 @@ export default function EditProduct() {
 
   /**
    * Maneja el envío del formulario para actualizar el producto.
-   * Valida categoriaId y envía los datos al backend.
+   * Envía datos compatibles con ProductoDTO.
    * @param {React.FormEvent} e - Evento del formulario
    * @returns {Promise<void>}
    */
@@ -102,15 +99,17 @@ export default function EditProduct() {
     }
     try {
       const formData = new FormData();
-      formData.append("producto", JSON.stringify({ nombre, descripcion }));
+      formData.append(
+        "producto",
+        new Blob([JSON.stringify({ nombre, descripcion })], { type: "application/json" })
+      );
       imagenes.forEach((imagen) => formData.append("imagenes", imagen));
-      if (categoriaId !== null) {
-        formData.append("categoriaId", String(categoriaId));
-      }
 
-      await axios.put(`${backendUrl}/api/productos/${id}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const url = categoriaId !== null
+        ? `${backendUrl}/api/productos/${id}?categoriaId=${categoriaId}`
+        : `${backendUrl}/api/productos/${id}`;
+
+      await axios.put(url, formData);
 
       await Swal.fire({
         title: "Éxito",
@@ -142,7 +141,6 @@ export default function EditProduct() {
     }
   };
 
-  // Renderiza el estado de carga
   if (loading) {
     return (
       <div className="min-h-screen p-8 text-black">
@@ -152,7 +150,6 @@ export default function EditProduct() {
     );
   }
 
-  // Renderiza el estado de error
   if (error) {
     return (
       <div className="min-h-screen p-8 text-black">
@@ -162,7 +159,6 @@ export default function EditProduct() {
     );
   }
 
-  // Renderiza el formulario de edición
   return (
     <div className="min-h-screen p-8 text-black">
       <div className="flex justify-between items-center mb-6">
@@ -213,8 +209,9 @@ export default function EditProduct() {
           <select
             id="categoria"
             value={categoriaId ?? ""}
-            onChange={(e) => setCategoriaId(e.target.value ? Number(e.target.value) : null)}
+            onChange={(e) => setCategoriaId(e.target.value ? e.target.value : null)}
             className="mt-1 block w-full border border-gray-300 rounded p-2"
+            disabled={categorias.length === 0}
           >
             <option value="">Sin categoría</option>
             {categorias.map((categoria) => (
@@ -223,6 +220,9 @@ export default function EditProduct() {
               </option>
             ))}
           </select>
+          {categorias.length === 0 && (
+            <p className="text-red-500 text-sm mt-1">No se pudieron cargar las categorías</p>
+          )}
         </div>
         <div className="mb-4">
           <label htmlFor="imagenes" className="block text-sm font-medium text-gray-700">
