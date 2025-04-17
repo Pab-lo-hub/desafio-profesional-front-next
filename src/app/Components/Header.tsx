@@ -1,4 +1,3 @@
-// src/app/Components/Header.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -24,11 +23,13 @@ import {
 } from "@heroicons/react/24/outline";
 import { ChevronDownIcon, PhoneIcon, PlayCircleIcon } from "@heroicons/react/20/solid";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
 
 // Lista de productos para el menú desplegable
 const products = [
-  { name: "Categorías", description: "Get a better understanding of your traffic", href: "#", icon: ChartPieIcon },
-  { name: "Productos", description: "Speak directly to your customers", href: "#", icon: CursorArrowRaysIcon },
+  { name: "Categorías", description: "Get a better understanding of your traffic", href: "/categorias", icon: ChartPieIcon },
+  { name: "Productos", description: "Speak directly to your customers", href: "/productos", icon: CursorArrowRaysIcon },
   { name: "Security", description: "Your customers’ data will be safe and secure", href: "#", icon: FingerPrintIcon },
   { name: "Integrations", description: "Connect with third-party tools", href: "#", icon: SquaresPlusIcon },
   { name: "Automations", description: "Build strategic funnels that will convert", href: "#", icon: ArrowPathIcon },
@@ -49,6 +50,12 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ className = "" }) => {
   // Estado para controlar si el menú móvil está abierto
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Obtener la sesión del usuario
+  const { data: session, status } = useSession();
+
+  // Determinar si el usuario está logueado y si es admin
+  const isLoggedIn = status === "authenticated";
+  const isAdmin = isLoggedIn && session?.user?.role === "admin";
 
   return (
     <header className={`fixed top-0 left-0 w-full bg-white shadow-md z-50 ${className}`}>
@@ -56,17 +63,17 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
       <nav aria-label="Global" className="mx-auto flex max-w-7xl items-center justify-between p-1 lg:px-4">
         {/* Logo y enlace a la página principal */}
         <div className="flex lg:flex-1">
-          <a href="/" className="-m-1 p-1">
+          <Link href="/" className="-m-1 p-1">
             <span className="sr-only">Rent</span>
             <Image
-              src="/travel-nest-logo.png" // Ruta relativa a public/
+              src="/travel-nest-logo.png"
               alt="Logo de Travel Nest"
-              width={128} // Ajustado para h-32 (~128px)
+              width={128}
               height={128}
               className="h-32 w-auto object-contain"
-              priority // Carga prioritaria para el header
+              priority
             />
-          </a>
+          </Link>
         </div>
         {/* Botón para abrir el menú móvil (visible en pantallas pequeñas) */}
         <div className="flex lg:hidden">
@@ -105,10 +112,10 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
                       />
                     </div>
                     <div className="flex-auto">
-                      <a href={item.href} className="block font-semibold text-gray-900">
+                      <Link href={item.href} className="block font-semibold text-gray-900">
                         {item.name}
                         <span className="absolute inset-0" />
-                      </a>
+                      </Link>
                       <p className="mt-1 text-gray-600">{item.description}</p>
                     </div>
                   </div>
@@ -116,42 +123,53 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
               </div>
               <div className="grid grid-cols-2 divide-x divide-gray-900/5 bg-gray-50">
                 {callsToAction.map((item) => (
-                  <a
+                  <Link
                     key={item.name}
                     href={item.href}
                     className="flex items-center justify-center gap-x-2.5 p-3 text-sm/6 font-semibold text-gray-900 hover:bg-gray-100"
                   >
                     <item.icon aria-hidden="true" className="size-5 flex-none text-gray-400" />
                     {item.name}
-                  </a>
+                  </Link>
                 ))}
               </div>
             </PopoverPanel>
           </Popover>
-          <a href="#" className="text-sm/6 font-semibold text-gray-900">
+          <Link href="/productos" className="text-sm/6 font-semibold text-gray-900">
             Productos
-          </a>
-          <a href="#" className="text-sm/6 font-semibold text-gray-900">
+          </Link>
+          <Link href="/categorias" className="text-sm/6 font-semibold text-gray-900">
             Categorias
-          </a>
-          <a href="#" className="text-sm/6 font-semibold text-gray-900">
+          </Link>
+          <Link href="/contacto" className="text-sm/6 font-semibold text-gray-900">
             Contacto
-          </a>
+          </Link>
         </PopoverGroup>
         {/* Botones de acción para pantallas grandes */}
-        <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <a
-            href="#"
-            className="bg-transparent hover:bg-blue-400 text-blue-400 font-semibold hover:text-white py-2 px-4 border border-blue-300 hover:border-transparent rounded mr-4"
-          >
-            Crear Cuenta
-          </a>
-          <a
-            href="#"
-            className="bg-transparent hover:bg-blue-400 text-blue-400 font-semibold hover:text-white py-2 px-4 border border-blue-300 hover:border-transparent rounded"
-          >
-            Iniciar Sesión
-          </a>
+        <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-x-4">
+          {isAdmin ? (
+            <Link
+              href="/admin"
+              className="bg-transparent hover:bg-blue-400 text-blue-400 font-semibold hover:text-white py-2 px-4 border border-blue-300 hover:border-transparent rounded"
+            >
+              Panel de Admin
+            </Link>
+          ) : isLoggedIn ? null : (
+            <>
+              <Link
+                href="/register"
+                className="bg-transparent hover:bg-blue-400 text-blue-400 font-semibold hover:text-white py-2 px-4 border border-blue-300 hover:border-transparent rounded"
+              >
+                Crear Cuenta
+              </Link>
+              <Link
+                href="/login"
+                className="bg-transparent hover:bg-blue-400 text-blue-400 font-semibold hover:text-white py-2 px-4 border border-blue-300 hover:border-transparent rounded"
+              >
+                Iniciar Sesión
+              </Link>
+            </>
+          )}
         </div>
       </nav>
       {/* Menú móvil (visible en pantallas pequeñas) */}
@@ -159,16 +177,16 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
         <div className="fixed inset-0 z-10" />
         <DialogPanel className="fixed inset-y-0 right-0 z-10 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
           <div className="flex items-center justify-between">
-            <a href="#" className="-m-1.5 p-1.5">
-              <span className="sr-only">Your Company</span>
+            <Link href="/" className="-m-1.5 p-1.5">
+              <span className="sr-only">Rent</span>
               <Image
-                src="/travel-nest-logo.png" // Usar la misma imagen que en el header principal
+                src="/travel-nest-logo.png"
                 alt="Logo de Travel Nest"
                 width={32}
                 height={32}
                 className="h-8 w-auto"
               />
-            </a>
+            </Link>
             <button
               type="button"
               onClick={() => setMobileMenuOpen(false)}
@@ -178,7 +196,76 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
               <XMarkIcon aria-hidden="true" className="size-6" />
             </button>
           </div>
-          {/* Resto del menú móvil (omitido por brevedad, pero puedes agregar más opciones) */}
+          <div className="mt-6 flow-root">
+            <div className="-my-6 divide-y divide-gray-500/10">
+              <div className="space-y-2 py-6">
+                <Disclosure as="div" className="-mx-3">
+                  <DisclosureButton className="group flex w-full items-center justify-between rounded-lg py-2 pl-3 pr-3.5 text-base font-semibold text-gray-900 hover:bg-gray-50">
+                    Panel
+                    <ChevronDownIcon
+                      aria-hidden="true"
+                      className="size-5 flex-none text-gray-400 group-data-open:-rotate-180"
+                    />
+                  </DisclosureButton>
+                  <DisclosurePanel className="mt-2 space-y-2">
+                    {products.map((item) => (
+                      <DisclosureButton
+                        key={item.name}
+                        as={Link}
+                        href={item.href}
+                        className="block rounded-lg py-2 pl-6 pr-3 text-sm font-semibold text-gray-900 hover:bg-gray-50"
+                      >
+                        {item.name}
+                      </DisclosureButton>
+                    ))}
+                  </DisclosurePanel>
+                </Disclosure>
+                <Link
+                  href="/productos"
+                  className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-gray-900 hover:bg-gray-50"
+                >
+                  Productos
+                </Link>
+                <Link
+                  href="/categorias"
+                  className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-gray-900 hover:bg-gray-50"
+                >
+                  Categorias
+                </Link>
+                <Link
+                  href="/contacto"
+                  className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold text-gray-900 hover:bg-gray-50"
+                >
+                  Contacto
+                </Link>
+              </div>
+              <div className="py-6">
+                {isAdmin ? (
+                  <Link
+                    href="/admin"
+                    className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-gray-900 hover:bg-gray-50"
+                  >
+                    Panel de Admin
+                  </Link>
+                ) : isLoggedIn ? null : (
+                  <>
+                    <Link
+                      href="/register"
+                      className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-gray-900 hover:bg-gray-50"
+                    >
+                      Crear Cuenta
+                    </Link>
+                    <Link
+                      href="/login"
+                      className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-gray-900 hover:bg-gray-50"
+                    >
+                      Iniciar Sesión
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
         </DialogPanel>
       </Dialog>
     </header>
