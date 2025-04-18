@@ -1,4 +1,3 @@
-// src/app/lib/auth.ts
 import CredentialsProvider from "next-auth/providers/credentials";
 import { Pool } from "pg";
 import { compare } from "bcrypt";
@@ -33,9 +32,10 @@ export const authOptions: NextAuthOptions = {
         console.log("Database connection established");
 
         try {
-          const result = await client.query("SELECT * FROM users WHERE email = $1", [
-            credentials.email,
-          ]);
+          const result = await client.query(
+            "SELECT id, email, password, role, nombre, apellido FROM users WHERE email = $1",
+            [credentials.email]
+          );
           const user = result.rows[0];
           if (!user) {
             console.log("No user found for email:", credentials.email);
@@ -58,6 +58,8 @@ export const authOptions: NextAuthOptions = {
           return {
             id: user.id.toString(),
             email: user.email,
+            nombre: user.nombre,
+            apellido: user.apellido,
             role: user.role || "cliente",
           };
         } catch (error) {
@@ -79,6 +81,9 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        token.nombre = user.nombre;
+        token.apellido = user.apellido;
+        token.email = user.email;
         token.role = user.role;
       }
       console.log("JWT Token:", token);
@@ -86,6 +91,9 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
+        session.user.nombre = token.nombre;
+        session.user.apellido = token.apellido;
+        session.user.email = token.email;
         session.user.role = token.role as "admin" | "cliente";
       }
       console.log("Session:", session);

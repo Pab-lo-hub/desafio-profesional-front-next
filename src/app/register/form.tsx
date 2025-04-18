@@ -8,12 +8,6 @@ import { Input } from "@headlessui/react";
 import { SubmitHandler } from "react-hook-form";
 
 const FormSchema = z.object({
-  username: z.string().min(2, {
-    message: "Username must be at least 2 characters.",
-  }),
-  password: z.string().min(6, {
-    message: "Password must be at least 6 characters.",
-  }),
   nombre: z.string().min(2, {
     message: "El nombre debe tener al menos 2 caracteres.",
   }).max(50, {
@@ -26,6 +20,9 @@ const FormSchema = z.object({
   }),
   email: z.string().email({
     message: "Por favor, ingrese un correo electrónico válido.",
+  }),
+  password: z.string().min(6, {
+    message: "La contraseña debe tener al menos 6 caracteres.",
   }),
 });
 
@@ -42,14 +39,13 @@ export default function FormPage() {
       nombre: "",
       apellido: "",
       email: "",
-      username: "",
       password: "",
     },
   });
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     console.log("Submitting form", data);
-    const { username: email, password } = data;
+    const { nombre, apellido, email, password } = data;
 
     try {
       const response = await fetch("/api/auth/register", {
@@ -57,11 +53,12 @@ export default function FormPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ nombre, apellido, email, password }),
       });
 
       if (!response.ok) {
-        throw new Error("Network response was not ok");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Network response was not ok");
       }
 
       const result = await response.json();
@@ -72,91 +69,85 @@ export default function FormPage() {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="w-2/3 space-y-6"
-    >
-      <h1>HOLA FORM</h1>
-
-      <div>
-        <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
-          Nombre
-        </label>
-        <Input
-          id="nombre"
-          type="text"
-          placeholder="Nombre"
-          {...register("nombre")}
-          className="mt-1 w-full p-2 border rounded data-[focus]:ring-2 data-[focus]:ring-blue-500"
-        />
-        {errors.nombre && (
-          <p className="text-red-500 text-sm mt-1">{errors.nombre.message}</p>
-        )}
-      </div>
-
-      <div>
-        <label htmlFor="apellido" className="block text-sm font-medium text-gray-700">
-          Apellido
-        </label>
-        <Input
-          id="apellido"
-          type="text"
-          placeholder="Apellido"
-          {...register("apellido")}
-          className="mt-1 w-full p-2 border rounded data-[focus]:ring-2 data-[focus]:ring-blue-500"
-        />
-        {errors.apellido && (
-          <p className="text-red-500 text-sm mt-1">{errors.apellido.message}</p>
-        )}
-      </div>
-
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-          Correo Electrónico
-        </label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="Correo Electrónico"
-          {...register("email")}
-          className="mt-1 w-full p-2 border rounded data-[focus]:ring-2 data-[focus]:ring-blue-500"
-        />
-        {errors.email && (
-          <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
-        )}
-      </div>
-
-      <div>
-        <Input
-          type="text"
-          placeholder="Username"
-          {...register("username")}
-          className="w-full p-2 border rounded"
-        />
-        {errors.username && (
-          <p className="text-red-500 text-sm">{errors.username.message}</p>
-        )}
-      </div>
-
-      <div>
-        <Input
-          type="password"
-          placeholder="Password"
-          {...register("password")}
-          className="w-full p-2 border rounded"
-        />
-        {errors.password && (
-          <p className="text-red-500 text-sm">{errors.password.message}</p>
-        )}
-      </div>
-
-      <Button
-        type="submit"
-        disabled={isSubmitting}
-        className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="w-full max-w-md space-y-6 bg-white p-6 rounded shadow-md"
       >
-        {isSubmitting ? "Submitting..." : "Submit"}
-      </Button>
-    </form >
+        <h1 className="text-2xl font-bold text-center">Registro</h1>
+
+        <div>
+          <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
+            Nombre
+          </label>
+          <Input
+            id="nombre"
+            type="text"
+            placeholder="Nombre"
+            {...register("nombre")}
+            className="mt-1 w-full p-2 border rounded data-[focus]:ring-2 data-[focus]:ring-blue-500"
+          />
+          {errors.nombre && (
+            <p className="text-red-500 text-sm mt-1">{errors.nombre.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="apellido" className="block text-sm font-medium text-gray-700">
+            Apellido
+          </label>
+          <Input
+            id="apellido"
+            type="text"
+            placeholder="Apellido"
+            {...register("apellido")}
+            className="mt-1 w-full p-2 border rounded data-[focus]:ring-2 data-[focus]:ring-blue-500"
+          />
+          {errors.apellido && (
+            <p className="text-red-500 text-sm mt-1">{errors.apellido.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            Correo Electrónico
+          </label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="Correo Electrónico"
+            {...register("email")}
+            className="mt-1 w-full p-2 border rounded data-[focus]:ring-2 data-[focus]:ring-blue-500"
+          />
+          {errors.email && (
+            <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            Contraseña
+          </label>
+          <Input
+            id="password"
+            type="password"
+            placeholder="Contraseña"
+            {...register("password")}
+            className="mt-1 w-full p-2 border rounded data-[focus]:ring-2 data-[focus]:ring-blue-500"
+          />
+          {errors.password && (
+            <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+          )}
+        </div>
+
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:bg-gray-400 data-[hover]:bg-blue-600 data-[disabled]:bg-gray-400"
+        >
+          {isSubmitting ? "Enviando..." : "Registrarse"}
+        </Button>
+      </form>
+    </div>
   );
 }

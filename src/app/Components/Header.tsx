@@ -23,8 +23,9 @@ import {
 } from "@heroicons/react/24/outline";
 import { ChevronDownIcon, PhoneIcon, PlayCircleIcon } from "@heroicons/react/20/solid";
 import Image from "next/image";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
+import { Button } from "@headlessui/react";
 
 // Lista de productos para el menú desplegable
 const products = [
@@ -46,6 +47,18 @@ interface HeaderProps {
   className?: string; // Clases CSS opcionales para personalizar el estilo
 }
 
+// Función para obtener las iniciales del usuario
+const getInitials = (nombre?: string, apellido?: string, email?: string): string => {
+  if (nombre && apellido) {
+    return `${nombre[0] || ""}${apellido[0] || ""}`.toUpperCase();
+  }
+  if (email) {
+    const emailPrefix = email.split("@")[0];
+    return emailPrefix.slice(0, 2).toUpperCase();
+  }
+  return "??";
+};
+
 // Componente principal del header
 const Header: React.FC<HeaderProps> = ({ className = "" }) => {
   // Estado para controlar si el menú móvil está abierto
@@ -56,6 +69,13 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
   // Determinar si el usuario está logueado y si es admin
   const isLoggedIn = status === "authenticated";
   const isAdmin = isLoggedIn && session?.user?.role === "admin";
+
+  // Obtener datos del usuario
+  const userNombre = session?.user?.nombre || undefined;
+  const userApellido = session?.user?.apellido || undefined;
+  const userEmail = session?.user?.email || undefined;
+  const displayName = userNombre && userApellido ? `${userNombre} ${userApellido}` : userEmail || "Usuario";
+  const initials = getInitials(userNombre, userApellido, userEmail);
 
   return (
     <header className={`fixed top-0 left-0 w-full bg-white shadow-md z-50 ${className}`}>
@@ -89,12 +109,10 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
         {/* Menú de navegación para pantallas grandes */}
         <PopoverGroup className="hidden lg:flex lg:gap-x-12">
           <Popover className="relative">
-            {/* Botón para el menú desplegable de productos */}
             <PopoverButton className="flex items-center gap-x-1 text-sm/6 font-semibold text-gray-900">
               Panel
               <ChevronDownIcon aria-hidden="true" className="size-5 flex-none text-gray-400" />
             </PopoverButton>
-            {/* Panel del menú desplegable */}
             <PopoverPanel
               transition
               className="absolute top-full -left-8 z-10 mt-3 w-screen max-w-md overflow-hidden rounded-3xl bg-white ring-1 shadow-lg ring-gray-900/5 transition data-closed:translate-y-1 data-closed:opacity-0 data-enter:duration-200 data-enter:ease-out data-leave:duration-150 data-leave:ease-in"
@@ -147,14 +165,30 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
         </PopoverGroup>
         {/* Botones de acción para pantallas grandes */}
         <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-x-4">
-          {isAdmin ? (
-            <Link
-              href="/admin"
-              className="bg-transparent hover:bg-blue-400 text-blue-400 font-semibold hover:text-white py-2 px-4 border border-blue-300 hover:border-transparent rounded"
-            >
-              Panel de Admin
-            </Link>
-          ) : isLoggedIn ? null : (
+          {isLoggedIn ? (
+            <div className="flex items-center gap-x-4">
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="bg-transparent hover:bg-blue-400 text-blue-400 font-semibold hover:text-white py-2 px-4 border border-blue-300 hover:border-transparent rounded"
+                >
+                  Panel Admin
+                </Link>
+              )}
+              <div className="flex items-center gap-x-2">
+                <div className="flex size-10 items-center justify-center rounded-full bg-blue-500 text-white font-semibold">
+                  {initials}
+                </div>
+                <span className="text-sm font-semibold text-gray-900">{displayName}</span>
+              </div>
+              <Button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="bg-transparent hover:bg-red-400 text-red-400 font-semibold hover:text-white py-2 px-4 border border-red-300 hover:border-transparent rounded"
+              >
+                Cerrar Sesión
+              </Button>
+            </div>
+          ) : (
             <>
               <Link
                 href="/register"
@@ -240,14 +274,30 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
                 </Link>
               </div>
               <div className="py-6">
-                {isAdmin ? (
-                  <Link
-                    href="/admin"
-                    className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-gray-900 hover:bg-gray-50"
-                  >
-                    Panel de Admin
-                  </Link>
-                ) : isLoggedIn ? null : (
+                {isLoggedIn ? (
+                  <>
+                    {isAdmin && (
+                      <Link
+                        href="/admin"
+                        className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-gray-900 hover:bg-gray-50"
+                      >
+                        Panel Admin
+                      </Link>
+                    )}
+                    <div className="-mx-3 flex items-center gap-x-2 rounded-lg px-3 py-2.5">
+                      <div className="flex size-8 items-center justify-center rounded-full bg-blue-500 text-white font-semibold">
+                        {initials}
+                      </div>
+                      <span className="text-base font-semibold text-gray-900">{displayName}</span>
+                    </div>
+                    <button
+                      onClick={() => signOut({ callbackUrl: "/" })}
+                      className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-red-600 hover:bg-gray-50"
+                    >
+                      Cerrar Sesión
+                    </button>
+                  </>
+                ) : (
                   <>
                     <Link
                       href="/register"

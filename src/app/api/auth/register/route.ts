@@ -9,44 +9,49 @@ const pool = new Pool({
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT),
   database: process.env.DB_NAME,
+  ssl: process.env.DB_HOST !== "localhost" ? { rejectUnauthorized: false } : undefined,
 });
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    const { nombre, apellido, email, password } = await request.json();
 
-    // Basic validation
-    if (!email || !password) {
+    // Validación básica
+    if (!nombre || !apellido || !email || !password) {
       return NextResponse.json(
-        { error: "Email and password are required" },
+        { error: "Nombre, apellido, email y contraseña son requeridos" },
         { status: 400 }
       );
     }
 
-    console.log({ email, password });
-
-    // Hash the password
-    const hashedPassword = await hash(password, 10);
-
-    // Insert into the database using parameterized query to prevent SQL injection
-    const queryText = "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *";
-    const values = [email, hashedPassword];
-    
     const client = await pool.connect();
-    try {
-      const response = await client.query(queryText, values);
-      console.log("User created:", response.rows[0]);
-    } finally {
-      client.release(); // Release the client back to the pool
-    }
 
-    return NextResponse.json({ message: "User registered successfully" }, { status: 201 });
+    try {
+      // Verificar si el email ya existe
+      const emailCheck = await client.query("SELECT id FROM users WHERE email = $1", [email]);
+      if (emailCheck.rows.length > 0) {
+        return NextResponse.json({ error: "El email ya está registrado" }, { status: 400 });
+      }
+
+      // Hashear la contraseña
+      const hashedPassword = await hash(password, 10);
+
+      // Insertar el nuevo usuario
+      const result = await client.query(
+        "INSERT INTO users (nombre, apellido, email, password, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, nombre, apellido, role",
+        [nombre, apellido, email, hashedPassword, "cliente"]
+      );
+
+      const newUser = result.rows[0];
+      console.log("Usuario registrado:", newUser);
+
+      return NextResponse.json({ message: "Registro exitoso", user: newUser }, { status: 201 });
+    } finally {
+      client.release();
+    }
   } catch (error: any) {
-    console.error("Error registering user:", error);
-    return NextResponse.json(
-      { error: "Failed to register user", details: error.message },
-      { status: 500 }
-    );
+    console.error("Error en registro:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
