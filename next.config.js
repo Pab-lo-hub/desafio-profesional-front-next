@@ -7,7 +7,19 @@ const nextConfig = {
   },
   images: {
     // Dominios permitidos para cargar imágenes con <Image>
-    domains: ["localhost", "tailwindui.com"],
+    remotePatterns: [
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "8080",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "tailwindui.com",
+        pathname: "/**",
+      },
+    ],
   },
 };
 
