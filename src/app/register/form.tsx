@@ -6,6 +6,9 @@ import * as z from "zod";
 import { Button } from "@headlessui/react";
 import { Input } from "@headlessui/react";
 import { SubmitHandler } from "react-hook-form";
+import Swal from "sweetalert2";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 const FormSchema = z.object({
   nombre: z.string().min(2, {
@@ -29,6 +32,7 @@ const FormSchema = z.object({
 type FormData = z.infer<typeof FormSchema>;
 
 export default function FormPage() {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -48,6 +52,7 @@ export default function FormPage() {
     const { nombre, apellido, email, password } = data;
 
     try {
+      // Registrar usuario
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
@@ -58,12 +63,40 @@ export default function FormPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Network response was not ok");
+        throw new Error(errorData.error || "Error al registrar el usuario");
       }
 
       const result = await response.json();
       console.log("Registration Successful", result);
+
+      // Iniciar sesión automáticamente
+      const signInResponse = await signIn("credentials", {
+        redirect: false,
+        email,
+        password,
+      });
+
+      if (signInResponse?.error) {
+        throw new Error("Error al iniciar sesión: " + signInResponse.error);
+      }
+
+      // Mostrar mensaje de éxito
+      await Swal.fire({
+        title: "Registro exitoso",
+        text: "Su cuenta ha sido creada y ha iniciado sesión.",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      // Redirigir a la página principal
+      router.push("/");
     } catch (error: any) {
+      Swal.fire({
+        title: "Error",
+        text: error.message || "No se pudo completar el registro.",
+        icon: "error",
+      });
       console.error("Registration Failed:", error.message);
     }
   };

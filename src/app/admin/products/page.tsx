@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { getSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Swal from "sweetalert2";
 
@@ -27,11 +27,13 @@ export default function ProductList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
+  const searchParams = useSearchParams();
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "[invalid url, do not cite]"
 
   /**
    * Efecto para cargar la lista de productos usando GET /api/productos.
    * Redirige a /login si el usuario no es admin.
+   * Recarga si hay un parámetro refresh=true.
    * @returns {void}
    */
   useEffect(() => {
@@ -43,6 +45,7 @@ export default function ProductList() {
           return;
         }
         const response = await axios.get<Producto[]>(`${backendUrl}/api/productos`);
+        console.log("Productos cargados:", response.data);
         setProductos(response.data);
         setLoading(false);
       } catch (err: any) {
@@ -53,7 +56,7 @@ export default function ProductList() {
       }
     };
     fetchProductos();
-  }, [router]);
+  }, [router, searchParams]); // Dependencia en searchParams para recarga
 
   /**
    * Maneja la eliminación de un producto tras confirmación.

@@ -31,7 +31,7 @@ interface Producto {
 export default function EditProduct() {
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
-  const [categoriaId, setCategoriaId] = useState<number | string | null>(null);
+  const [categoriaId, setCategoriaId] = useState<string | null>(null);
   const [imagenes, setImagenes] = useState<File[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,11 +39,12 @@ export default function EditProduct() {
   const router = useRouter();
   const params = useParams();
   const id = params.id;
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "[invalid url, do not cite]"
 
   /**
    * Efecto para cargar los datos del producto y las categorías.
    * Redirige a /login si el usuario no es admin.
+   * Maneja el caso de categoría inválida al cargar el producto.
    * @returns {void}
    */
   useEffect(() => {
@@ -58,18 +59,31 @@ export default function EditProduct() {
         // Obtener producto
         const productoResponse = await axios.get<Producto>(`${backendUrl}/api/productos/${id}`);
         const producto = productoResponse.data;
+        console.log("Producto cargado:", producto);
         setNombre(producto.nombre);
         setDescripcion(producto.descripcion || "");
-        setCategoriaId(producto.categoria ? producto.categoria.id : null);
+        let initialCategoriaId = producto.categoria ? String(producto.categoria.id) : null;
 
         // Obtener categorías
-        try {
-          const categoriasResponse = await axios.get<Categoria[]>(`${backendUrl}/api/categorias`);
-          setCategorias(categoriasResponse.data);
-        } catch (catError) {
-          console.error("Error fetching categories:", catError);
-          setCategorias([]);
+        const categoriasResponse = await axios.get<Categoria[]>(`${backendUrl}/api/categorias`);
+        const normalizedCategorias = categoriasResponse.data.map((cat) => ({
+          ...cat,
+          id: String(cat.id), // Normaliza IDs a string
+        }));
+        setCategorias(normalizedCategorias);
+
+        // Verificar si la categoría del producto es válida
+        console.log("Initial categoriaId:", initialCategoriaId);
+        console.log("Available categorias:", normalizedCategorias);
+        if (initialCategoriaId !== null && !normalizedCategorias.some((cat) => cat.id === initialCategoriaId)) {
+          initialCategoriaId = null;
+          Swal.fire({
+            title: "Advertencia",
+            text: "La categoría actual del producto ya no está disponible. Por favor, seleccione una nueva categoría.",
+            icon: "warning",
+          });
         }
+        setCategoriaId(initialCategoriaId);
 
         setLoading(false);
       } catch (err: any) {
@@ -83,12 +97,14 @@ export default function EditProduct() {
 
   /**
    * Maneja el envío del formulario para actualizar el producto.
-   * Envía datos compatibles con ProductoDTO.
+   * Envía datos compatibles con ProductoDTO, incluyendo categoriaId en el cuerpo.
    * @param {React.FormEvent} e - Evento del formulario
    * @returns {Promise<void>}
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Submitting with categoriaId:", categoriaId);
+    console.log("Available categorias:", categorias);
     if (categoriaId !== null && !categorias.some((cat) => cat.id === categoriaId)) {
       Swal.fire({
         title: "Error",
@@ -99,17 +115,24 @@ export default function EditProduct() {
     }
     try {
       const formData = new FormData();
+      const productoData = {
+        nombre,
+        descripcion,
+        categoriaId: categoriaId, // Envía null si no hay categoría seleccionada
+      };
       formData.append(
         "producto",
-        new Blob([JSON.stringify({ nombre, descripcion })], { type: "application/json" })
+        new Blob([JSON.stringify(productoData)], { type: "application/json" })
       );
       imagenes.forEach((imagen) => formData.append("imagenes", imagen));
 
-      const url = categoriaId !== null
+      const url = categoriaId
         ? `${backendUrl}/api/productos/${id}?categoriaId=${categoriaId}`
         : `${backendUrl}/api/productos/${id}`;
-
-      await axios.put(url, formData);
+      console.log("Sending PUT request to:", url);
+      console.log("Producto data:", productoData);
+      const response = await axios.put(url, formData);
+      console.log("Backend response:", response.data);
 
       await Swal.fire({
         title: "Éxito",
@@ -118,7 +141,8 @@ export default function EditProduct() {
         timer: 1500,
         showConfirmButton: false,
       });
-      router.push("/admin/products");
+      // Redirige con parámetro para forzar recarga
+      router.push("/admin/products?refresh=true");
     } catch (err: any) {
       const message = err.response?.data || "No se pudo actualizar el producto.";
       await Swal.fire({
