@@ -107,7 +107,7 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
           </button>
         </div>
         {/* Menú de navegación para pantallas grandes */}
-        <PopoverGroup className="hidden lg:flex lg:gap-x-12">
+        <PopoverGroup className="hidden lg:flex lg:gap-x-12 pr-20">
           {/* <Popover className="relative">
             <PopoverButton className="flex items-center gap-x-1 text-sm/6 font-semibold text-gray-900">
               Panel
@@ -167,23 +167,24 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
         <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-x-4">
           {isLoggedIn ? (
             <div className="flex items-center gap-x-4">
-              {isAdmin && (
-                <Link
-                  href="/admin"
-                  className="bg-transparent hover:bg-blue-400 text-blue-400 font-semibold hover:text-white py-2 px-4 border border-blue-300 hover:border-transparent rounded"
-                >
-                  Panel Admin
-                </Link>
-              )}
+
               <div className="flex items-center gap-x-2">
                 <div className="flex size-10 items-center justify-center rounded-full bg-blue-500 text-white font-semibold">
                   {initials}
                 </div>
                 <span className="text-sm font-semibold text-gray-900">{displayName}</span>
               </div>
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="bg-transparent hover:bg-blue-400 text-blue-400 font-semibold hover:text-white py-1 px-2 border border-blue-300 hover:border-transparent rounded mx-2 text-sm"
+                >
+                  Panel Admin
+                </Link>
+              )}
               <Button
                 onClick={() => signOut({ callbackUrl: "/" })}
-                className="bg-transparent hover:bg-red-400 text-red-400 font-semibold hover:text-white py-2 px-4 border border-red-300 hover:border-transparent rounded"
+                className="bg-transparent hover:bg-red-400 text-red-400 font-semibold hover:text-white py-1 px-2 border border-red-300 hover:border-transparent rounded text-sm"
               >
                 Cerrar Sesión
               </Button>
@@ -192,13 +193,13 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
             <>
               <Link
                 href="/register"
-                className="bg-transparent hover:bg-blue-400 text-blue-400 font-semibold hover:text-white py-2 px-4 border border-blue-300 hover:border-transparent rounded"
+                className="bg-transparent hover:bg-blue-400 text-blue-400 font-semibold hover:text-white py-1 px-2 border border-blue-300 hover:border-transparent rounded text-sm"
               >
                 Crear Cuenta
               </Link>
               <Link
                 href="/login"
-                className="bg-transparent hover:bg-blue-400 text-blue-400 font-semibold hover:text-white py-2 px-4 border border-blue-300 hover:border-transparent rounded"
+                className="bg-transparent hover:bg-blue-400 text-blue-400 font-semibold hover:text-white py-1 px-2 border border-blue-300 hover:border-transparent rounded text-sm"
               >
                 Iniciar Sesión
               </Link>
