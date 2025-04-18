@@ -9,6 +9,7 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { Dialog, DialogPanel } from "@headlessui/react";
 import Header from "../../Components/Header"; // Importa el componente Header
 import Footer from "../../Components/Footer"; // Importa el componente Footer
+import HeaderWithSession from "@/app/Components/HeaderWithSession";
 
 // Interfaz que define la estructura de una imagen
 interface ProductImage {
@@ -202,7 +203,7 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
     return (
       <div className="flex flex-col min-h-screen">
         {/* Componente Header compartido */}
-        {/* <Header className="z-50" /> */}
+        <HeaderWithSession className="z-50" />
         {/* Contenedor principal con espacio para evitar solapamiento */}
         <main className="flex-grow pt-36">
           <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8 text-center">
@@ -220,7 +221,7 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
     return (
       <div className="flex flex-col min-h-screen">
         {/* Componente Header compartido */}
-        {/* <Header className="z-50" /> */}
+        <HeaderWithSession className="z-50" />
         {/* Contenedor principal con espacio para evitar solapamiento */}
         <main className="flex-grow pt-36">
           <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8 text-center text-red-500">
@@ -236,7 +237,7 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Componente Header compartido, con z-index para asegurar visibilidad */}
-      {/* <Header className="z-50" /> */}
+      <HeaderWithSession className="z-50" />
       {/* Contenedor principal con espacio para evitar solapamiento con el header */}
       <main className="flex-grow pt-36">
         <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8">

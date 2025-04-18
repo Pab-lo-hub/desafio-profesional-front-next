@@ -2,11 +2,14 @@
 
 import { SessionProvider } from "next-auth/react";
 import Header from "./Header";
+import { ComponentProps } from "react";
 
-export default function HeaderWithSession() {
+type HeaderProps = ComponentProps<typeof Header>;
+
+export default function HeaderWithSession(props: HeaderProps) {
   return (
     <SessionProvider>
-      <Header />
+      <Header {...props} />
     </SessionProvider>
   );
 }

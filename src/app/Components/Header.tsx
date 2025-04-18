@@ -108,7 +108,7 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
         </div>
         {/* Menú de navegación para pantallas grandes */}
         <PopoverGroup className="hidden lg:flex lg:gap-x-12">
-          <Popover className="relative">
+          {/* <Popover className="relative">
             <PopoverButton className="flex items-center gap-x-1 text-sm/6 font-semibold text-gray-900">
               Panel
               <ChevronDownIcon aria-hidden="true" className="size-5 flex-none text-gray-400" />
@@ -152,7 +152,7 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
                 ))}
               </div>
             </PopoverPanel>
-          </Popover>
+          </Popover> */}
           <Link href="/productos" className="text-sm/6 font-semibold text-gray-900">
             Productos
           </Link>
