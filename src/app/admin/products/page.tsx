@@ -1,7 +1,7 @@
 // src/app/admin/products/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import axios from "axios";
 import { getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -20,22 +20,16 @@ interface Producto {
 }
 
 /**
- * Componente para listar y gestionar productos en el panel de administración.
+ * Componente que maneja la carga y renderizado de la tabla de productos.
  */
-export default function ProductList() {
+function ProductTable() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "[invalid url, do not cite]"
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
-  /**
-   * Efecto para cargar la lista de productos usando GET /api/productos.
-   * Redirige a /login si el usuario no es admin.
-   * Recarga si hay un parámetro refresh=true.
-   * @returns {void}
-   */
   useEffect(() => {
     const fetchProductos = async () => {
       try {
@@ -56,13 +50,8 @@ export default function ProductList() {
       }
     };
     fetchProductos();
-  }, [router, searchParams]); // Dependencia en searchParams para recarga
+  }, [router, searchParams]);
 
-  /**
-   * Maneja la eliminación de un producto tras confirmación.
-   * @param {number | string} id - ID del producto
-   * @returns {Promise<void>}
-   */
   const handleDelete = async (id: number | string) => {
     const result = await Swal.fire({
       title: "¿Estás seguro?",
@@ -96,18 +85,12 @@ export default function ProductList() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen p-8 text-black">
-        <h1 className="text-3xl font-bold mb-4">Gestionar Productos</h1>
-        <p>Cargando...</p>
-      </div>
-    );
+    return <p>Cargando...</p>;
   }
 
   if (error) {
     return (
-      <div className="min-h-screen p-8 text-black">
-        <h1 className="text-3xl font-bold mb-4">Gestionar Productos</h1>
+      <div>
         <p className="text-red-500">{error}</p>
         <Link href="/admin" className="text-blue-500 hover:underline">
           Volver al Panel
@@ -116,6 +99,55 @@ export default function ProductList() {
     );
   }
 
+  return (
+    <div className="bg-white shadow-md rounded-lg overflow-hidden">
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Nombre
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Categoría
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Acciones
+            </th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {productos.map((producto) => (
+            <tr key={producto.id}>
+              <td className="px-6 py-4 whitespace-nowrap">{producto.nombre}</td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                {producto.categoria ? producto.categoria.titulo : "Sin categoría"}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <Link
+                  href={`/admin/products/edit/${producto.id}`}
+                  className="text-blue-600 hover:text-blue-900 mr-4"
+                >
+                  Editar
+                </Link>
+                <button
+                  onClick={() => handleDelete(producto.id)}
+                  className="text-red-600 hover:text-red-900"
+                >
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/**
+ * Componente principal para la página de gestión de productos.
+ */
+export default function ProductList() {
   return (
     <div className="min-h-screen p-8 text-black">
       <div className="flex justify-between items-center mb-6">
@@ -141,47 +173,9 @@ export default function ProductList() {
           </Link>
         </div>
       </div>
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Nombre
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Categoría
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Acciones
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {productos.map((producto) => (
-              <tr key={producto.id}>
-                <td className="px-6 py-4 whitespace-nowrap">{producto.nombre}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {producto.categoria ? producto.categoria.titulo : "Sin categoría"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <Link
-                    href={`/admin/products/edit/${producto.id}`}
-                    className="text-blue-600 hover:text-blue-900 mr-4"
-                  >
-                    Editar
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(producto.id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    Eliminar
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Suspense fallback={<p>Cargando...</p>}>
+        <ProductTable />
+      </Suspense>
     </div>
   );
 }
