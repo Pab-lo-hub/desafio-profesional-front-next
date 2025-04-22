@@ -1,4 +1,3 @@
-// src/app/admin/page.tsx
 import { getServerSession } from "next-auth";
 import { authOptions } from "../lib/auth";
 import { redirect } from "next/navigation";
@@ -22,7 +21,7 @@ export default async function AdminPanel() {
       <p>Rol: {session.user.role}</p>
       <div className="flex flex-row flex-wrap gap-4">
         {/* Tarjeta para Agregar Producto */}
-        <div className="max-w-sm p-6 bg-white border border-gray-200 rounded Ending Session-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div className="max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
           <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Agregar Producto</h5>
           <p className="mb-3 font-normal text-gray-700 dark:text-gray-400">Crea un nuevo producto en el sistema.</p>
           <Link href="/admin/products/add">
@@ -48,6 +47,16 @@ export default async function AdminPanel() {
           <Link href="/admin/users">
             <button className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:ring-4 focus:outline-none focus:ring-blue-300">
               Ver Usuarios
+            </button>
+          </Link>
+        </div>
+        {/* Tarjeta para Lista de Características */}
+        <div className="max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+          <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Lista de Características</h5>
+          <p className="mb-3 font-normal text-gray-700 dark:text-gray-400">Ver y gestionar las características de los productos.</p>
+          <Link href="/admin/features">
+            <button className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:ring-4 focus:outline-none focus:ring-blue-300">
+              Ver Características
             </button>
           </Link>
         </div>
