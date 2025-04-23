@@ -7,6 +7,17 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Swal from "sweetalert2";
+import { FaWifi, FaBluetooth, FaBatteryFull, FaCamera, FaMicrochip } from "react-icons/fa";
+import { IconType } from "react-icons";
+
+// Lista de iconos disponibles desde react-icons
+const availableIcons: { name: string; icon: IconType }[] = [
+  { name: "FaWifi", icon: FaWifi },
+  { name: "FaBluetooth", icon: FaBluetooth },
+  { name: "FaBatteryFull", icon: FaBatteryFull },
+  { name: "FaCamera", icon: FaCamera },
+  { name: "FaMicrochip", icon: FaMicrochip },
+];
 
 interface Feature {
   id: number;
@@ -24,24 +35,28 @@ export default function FeatureListPage() {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
   useEffect(() => {
+    console.log("backendUrl:", backendUrl);
     const fetchFeatures = async () => {
       try {
         const session = await getSession();
+        console.log("Session:", session);
         if (!session || session.user.role !== "admin") {
           router.push("/login");
           return;
         }
 
+        console.log("Fetching features from:", `${backendUrl}/api/features`);
         const response = await axios.get<Feature[]>(`${backendUrl}/api/features`, {
           headers: { "Content-Type": "application/json" },
         });
 
+        console.log("Features fetched:", response.data);
         setFeatures(response.data);
         setLoading(false);
       } catch (err: any) {
+        console.error("Error fetching features:", err.response?.data, err.response?.status);
         setError(err.message || "No se pudo cargar la lista de características");
         setLoading(false);
-        console.error("Error fetching features:", err);
       }
     };
 
@@ -59,12 +74,14 @@ export default function FeatureListPage() {
     }
 
     try {
+      console.log("Adding feature:", newFeature);
       const response = await axios.post<Feature>(
         `${backendUrl}/api/features`,
         newFeature,
         { headers: { "Content-Type": "application/json" } }
       );
 
+      console.log("Feature added:", response.data);
       setFeatures([...features, response.data]);
       setNewFeature({ nombre: "", icono: "" });
 
@@ -76,12 +93,12 @@ export default function FeatureListPage() {
         showConfirmButton: false,
       });
     } catch (err: any) {
+      console.error("Error adding feature:", err.response?.data, err.response?.status);
       Swal.fire({
         title: "Error",
-        text: err.message || "No se pudo añadir la característica",
+        text: err.response?.data?.message || "No se pudo añadir la característica",
         icon: "error",
       });
-      console.error("Error adding feature:", err);
     }
   };
 
@@ -96,6 +113,7 @@ export default function FeatureListPage() {
     }
 
     try {
+      console.log("Updating feature:", editingFeature);
       const response = await axios.put<Feature>(
         `${backendUrl}/api/features/${editingFeature.id}`,
         editingFeature,
@@ -113,12 +131,12 @@ export default function FeatureListPage() {
         showConfirmButton: false,
       });
     } catch (err: any) {
+      console.error("Error updating feature:", err.response?.data, err.response?.status);
       Swal.fire({
         title: "Error",
-        text: err.message || "No se pudo actualizar la característica",
+        text: err.response?.data?.message || "No se pudo actualizar la característica",
         icon: "error",
       });
-      console.error("Error updating feature:", err);
     }
   };
 
@@ -133,6 +151,7 @@ export default function FeatureListPage() {
     if (!confirm.isConfirmed) return;
 
     try {
+      console.log("Deleting feature ID:", id);
       await axios.delete(`${backendUrl}/api/features/${id}`, {
         headers: { "Content-Type": "application/json" },
       });
@@ -147,13 +166,21 @@ export default function FeatureListPage() {
         showConfirmButton: false,
       });
     } catch (err: any) {
+      console.error("Error deleting feature:", err.response?.data, err.response?.status);
       Swal.fire({
         title: "Error",
-        text: err.message || "No se pudo eliminar la característica",
+        text: err.response?.data?.message || "No se pudo eliminar la característica",
         icon: "error",
       });
-      console.error("Error deleting feature:", err);
     }
+  };
+
+  // Función para renderizar el icono dinámicamente
+  const renderIcon = (icono: string) => {
+    const iconObj = availableIcons.find((i) => i.name === icono);
+    if (!iconObj) return <span>Icono no encontrado</span>;
+    const IconComponent = iconObj.icon;
+    return <IconComponent className="text-xl" />;
   };
 
   if (loading) {
@@ -201,13 +228,18 @@ export default function FeatureListPage() {
               onChange={(e) => setNewFeature({ ...newFeature, nombre: e.target.value })}
               className="border rounded-lg p-2"
             />
-            <input
-              type="text"
-              placeholder="Ícono (e.g., FaWifi)"
+            <select
               value={newFeature.icono}
               onChange={(e) => setNewFeature({ ...newFeature, icono: e.target.value })}
               className="border rounded-lg p-2"
-            />
+            >
+              <option value="">Selecciona un ícono</option>
+              {availableIcons.map((icon) => (
+                <option key={icon.name} value={icon.name}>
+                  {icon.name}
+                </option>
+              ))}
+            </select>
             <button
               onClick={handleAddFeature}
               className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
@@ -233,7 +265,10 @@ export default function FeatureListPage() {
                     <tr key={feature.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{feature.id}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{feature.nombre}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{feature.icono}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 flex items-center space-x-2">
+                        {renderIcon(feature.icono)}
+                        <span>{feature.icono}</span>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => setEditingFeature(feature)}
@@ -266,13 +301,18 @@ export default function FeatureListPage() {
                 onChange={(e) => setEditingFeature({ ...editingFeature, nombre: e.target.value })}
                 className="border rounded-lg p-2 w-full mb-4"
               />
-              <input
-                type="text"
-                placeholder="Ícono"
+              <select
                 value={editingFeature.icono}
                 onChange={(e) => setEditingFeature({ ...editingFeature, icono: e.target.value })}
                 className="border rounded-lg p-2 w-full mb-4"
-              />
+              >
+                <option value="">Selecciona un ícono</option>
+                {availableIcons.map((icon) => (
+                  <option key={icon.name} value={icon.name}>
+                    {icon.name}
+                  </option>
+                ))}
+              </select>
               <div className="flex gap-4">
                 <button
                   onClick={handleEditFeature}

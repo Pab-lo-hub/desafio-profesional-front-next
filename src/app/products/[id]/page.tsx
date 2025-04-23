@@ -1,4 +1,3 @@
-// src/app/products/[id]/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,21 +7,30 @@ import Link from "next/link";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { Dialog, DialogPanel } from "@headlessui/react";
 import { FaWifi, FaTv, FaCar, FaSwimmingPool, FaPaw, FaSnowflake } from "react-icons/fa";
+import { IconType } from "react-icons";
 import HeaderWithSession from "@/app/Components/HeaderWithSession";
 import Footer from "@/app/Components/Footer";
 
-// Interfaz que define la estructura de una imagen
+// Interfaz para una característica
+interface Feature {
+  id: number;
+  nombre: string;
+  icono: string;
+}
+
+// Interfaz para una imagen
 interface ProductImage {
   id: number;
   ruta: string;
 }
 
-// Interfaz que define la estructura de un producto
+// Interfaz para un producto
 interface Product {
   id: number;
   nombre: string;
   descripcion: string;
   imagenes: ProductImage[];
+  features: Feature[];
 }
 
 // Interfaz para los props del componente
@@ -30,7 +38,17 @@ interface ProductPageProps {
   params: Promise<{ id: string }>;
 }
 
-// Componente para la galería de imágenes del producto
+// Lista de iconos disponibles
+const availableIcons: { name: string; icon: IconType }[] = [
+  { name: "FaWifi", icon: FaWifi },
+  { name: "FaTv", icon: FaTv },
+  { name: "FaCar", icon: FaCar },
+  { name: "FaSwimmingPool", icon: FaSwimmingPool },
+  { name: "FaPaw", icon: FaPaw },
+  { name: "FaSnowflake", icon: FaSnowflake },
+];
+
+// Componente para la galería de imágenes del producto (UNCHANGED)
 function ProductImageGallery({
   imagenes,
   backendUrl,
@@ -127,32 +145,34 @@ function ProductImageGallery({
   );
 }
 
-// Componente para el bloque de características
-function ProductFeatures() {
-  // Lista estática de características con sus íconos
-  const features = [
-    { name: "Wifi", icon: <FaWifi className="text-indigo-600 h-6 w-6" /> },
-    { name: "TV", icon: <FaTv className="text-indigo-600 h-6 w-6" /> },
-    { name: "Estacionamiento", icon: <FaCar className="text-indigo-600 h-6 w-6" /> },
-    { name: "Pileta", icon: <FaSwimmingPool className="text-indigo-600 h-6 w-6" /> },
-    { name: "Apto Mascotas", icon: <FaPaw className="text-indigo-600 h-6 w-6" /> },
-    { name: "Aire Acondicionado", icon: <FaSnowflake className="text-indigo-600 h-6 w-6" /> },
-  ];
+// Componente para el bloque de características (UPDATED)
+function ProductFeatures({ features }: { features: Feature[] }) {
+  // Función para renderizar el icono dinámicamente
+  const renderIcon = (icono: string) => {
+    const iconObj = availableIcons.find((i) => i.name === icono);
+    if (!iconObj) return <span className="text-gray-700">Icono no encontrado</span>;
+    const IconComponent = iconObj.icon;
+    return <IconComponent className="text-indigo-600 h-6 w-6" />;
+  };
 
   return (
     <div className="mt-8">
       <h2 className="text-2xl font-semibold text-gray-900 mb-4">Características</h2>
-      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-        {features.map((feature) => (
-          <li
-            key={feature.name}
-            className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
-          >
-            {feature.icon}
-            <span className="text-gray-700">{feature.name}</span>
-          </li>
-        ))}
-      </ul>
+      {features.length > 0 ? (
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+          {features.map((feature) => (
+            <li
+              key={feature.id}
+              className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
+            >
+              {renderIcon(feature.icono)}
+              <span className="text-gray-700">{feature.nombre}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-gray-700">No hay características disponibles</p>
+      )}
     </div>
   );
 }
@@ -174,16 +194,18 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
           throw new Error("El ID del producto debe ser un número");
         }
 
+        console.log("Fetching product ID:", id);
         const response = await axios.get<Product>(`${backendUrl}/api/productos/${id}`, {
           headers: { "Content-Type": "application/json" },
         });
 
+        console.log("Product fetched:", response.data);
         setProduct(response.data);
         setLoading(false);
       } catch (err: any) {
-        setError(err.message || "No se pudo cargar el producto");
+        console.error("Error fetching product:", err.response?.data, err.response?.status);
+        setError(err.response?.data?.message || "No se pudo cargar el producto");
         setLoading(false);
-        console.error("Error fetching product:", err);
       }
     };
 
@@ -238,7 +260,7 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
               <div>
                 <p className="text-gray-700 mb-6">{product.descripcion}</p>
                 <ProductImageGallery imagenes={product.imagenes} backendUrl={backendUrl} />
-                <ProductFeatures />
+                <ProductFeatures features={product.features || []} />
               </div>
             </div>
           </div>
