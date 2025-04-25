@@ -2,17 +2,28 @@
 
 import { useState, useEffect } from "react";
 
-export default function Categorias({ onCategorySelect }) {
-  const [categorias, setCategorias] = useState([]);
+interface Categoria {
+  id: number;
+  titulo: string;
+  descripcion?: string;
+  imagen?: string;
+}
+
+interface CategoriasProps {
+  onCategorySelect: (id: number) => void;
+}
+
+export default function Categorias({ onCategorySelect }: CategoriasProps) {
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
   const fallbackImage = "https://tailwindui.com/plus-assets/img/ecommerce-images/category-page-04-image-card-01.jpg";
 
   useEffect(() => {
     const fetchCategorias = async () => {
       try {
-        const response = await fetch("/api/categorias");
+        const response = await fetch(`${backendUrl}/api/categorias`);
         if (!response.ok) {
           throw new Error("Failed to fetch categories");
         }
@@ -20,7 +31,7 @@ export default function Categorias({ onCategorySelect }) {
         console.log("Categories from API:", data);
         setCategorias(data);
         setLoading(false);
-      } catch (err) {
+      } catch (err: any) {
         setError(err.message);
         setLoading(false);
         console.error("Error fetching categories:", err);
@@ -51,7 +62,11 @@ export default function Categorias({ onCategorySelect }) {
             >
               <img
                 alt={categoria.descripcion || "Categoría sin descripción"}
-                src={categoria.imagen && categoria.imagen.startsWith('http') ? categoria.imagen : `${backendUrl}${categoria.imagen}`}
+                src={
+                  categoria.imagen && categoria.imagen.startsWith("http")
+                    ? categoria.imagen
+                    : `${backendUrl}${categoria.imagen || ""}`
+                }
                 className="aspect-square w-full rounded-lg bg-gray-200 object-cover group-hover:opacity-75 xl:aspect-7/8"
                 onError={(e) => {
                   e.currentTarget.src = fallbackImage;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react"; 
 import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,6 +10,8 @@ import { FaWifi, FaTv, FaCar, FaSwimmingPool, FaPaw, FaSnowflake } from "react-i
 import { IconType } from "react-icons";
 import HeaderWithSession from "@/app/Components/HeaderWithSession";
 import Footer from "@/app/Components/Footer";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 // Interfaz para una característica
 interface Feature {
@@ -22,6 +24,14 @@ interface Feature {
 interface ProductImage {
   id: number;
   ruta: string;
+}
+
+// Interfaz para disponibilidad
+interface Availability {
+  id: number;
+  fechaInicio: string;
+  fechaFin: string;
+  estado: string;
 }
 
 // Interfaz para un producto
@@ -48,7 +58,7 @@ const availableIcons: { name: string; icon: IconType }[] = [
   { name: "FaSnowflake", icon: FaSnowflake },
 ];
 
-// Componente para la galería de imágenes del producto (UNCHANGED)
+// Componente para la galería de imágenes del producto
 function ProductImageGallery({
   imagenes,
   backendUrl,
@@ -145,9 +155,8 @@ function ProductImageGallery({
   );
 }
 
-// Componente para el bloque de características (UPDATED)
+// Componente para el bloque de características
 function ProductFeatures({ features }: { features: Feature[] }) {
-  // Función para renderizar el icono dinámicamente
   const renderIcon = (icono: string) => {
     const iconObj = availableIcons.find((i) => i.name === icono);
     if (!iconObj) return <span className="text-gray-700">Icono no encontrado</span>;
@@ -173,6 +182,114 @@ function ProductFeatures({ features }: { features: Feature[] }) {
       ) : (
         <p className="text-gray-700">No hay características disponibles</p>
       )}
+    </div>
+  );
+}
+
+// Componente para disponibilidad
+function ProductAvailability({ productId, backendUrl }: { productId: number; backendUrl: string }) {
+  const [availabilities, setAvailabilities] = useState<Availability[]>([]);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      try {
+        const response = await axios.get<Availability[]>(`${backendUrl}/api/productos/${productId}/availability`);
+        setAvailabilities(response.data);
+      } catch (error) {
+        console.error("Error fetching availability:", error);
+      }
+    };
+    fetchAvailability();
+  }, [productId, backendUrl]);
+
+  const includeDates = availabilities
+    .filter((a) => a.estado === "DISPONIBLE")
+    .map((a) => ({
+      start: new Date(a.fechaInicio),
+      end: new Date(a.fechaFin),
+    }));
+
+  interface CustomInputProps {
+    value?: string;
+    onClick?: () => void;
+    placeholder?: string;
+  }
+
+  const CustomInput = React.forwardRef<HTMLInputElement, CustomInputProps>(
+    ({ value = "", onClick = () => {}, placeholder = "" }, ref) => (
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+          <svg
+            className="w-4 h-4 text-gray-500"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z" />
+          </svg>
+        </div>
+        <input
+          value={value}
+          onClick={onClick}
+          ref={ref}
+          readOnly
+          className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-40 pl-10 p-3 shadow-sm hover:shadow-md transition-shadow"
+          placeholder={placeholder}
+        />
+      </div>
+    )
+  );
+
+  CustomInput.displayName = "CustomInput";
+
+  const handleReserve = () => {
+    if (startDate && endDate) {
+      console.log("Reserving:", { productId, startDate, endDate });
+      // Navigate to reservation page or open modal
+    } else {
+      alert("Por favor, selecciona un rango de fechas");
+    }
+  };
+
+  return (
+    <div className="mt-8">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-4">Disponibilidad</h2>
+      <div className="flex flex-col sm:flex-row gap-4 items-start">
+        <div className="flex gap-3">
+          <DatePicker
+            selected={startDate}
+            onChange={(date: Date | null) => setStartDate(date)}
+            selectsStart
+            startDate={startDate}
+            endDate={endDate}
+            includeDateIntervals={includeDates}
+            customInput={<CustomInput />}
+            placeholderText="Fecha Inicio"
+            isClearable
+          />
+          <DatePicker
+            selected={endDate}
+            onChange={(date: Date | null) => setEndDate(date)}
+            selectsEnd
+            startDate={startDate}
+            endDate={endDate}
+            minDate={startDate ?? undefined}
+            includeDateIntervals={includeDates}
+            customInput={<CustomInput />}
+            placeholderText="Fecha Fin"
+            isClearable
+          />
+        </div>
+        <button
+          onClick={handleReserve}
+          className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 transition-colors"
+        >
+          Reservar
+        </button>
+      </div>
     </div>
   );
 }
@@ -261,6 +378,7 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
                 <p className="text-gray-700 mb-6">{product.descripcion}</p>
                 <ProductImageGallery imagenes={product.imagenes} backendUrl={backendUrl} />
                 <ProductFeatures features={product.features || []} />
+                <ProductAvailability productId={product.id} backendUrl={backendUrl} />
               </div>
             </div>
           </div>
