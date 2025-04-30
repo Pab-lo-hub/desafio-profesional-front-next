@@ -1,103 +1,82 @@
+import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { Pool } from "pg";
-import { compare } from "bcrypt";
-import { NextAuthOptions } from "next-auth";
+import axios from "axios";
 
-const pool = new Pool({
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT),
-  database: process.env.DB_NAME,
-  ssl: process.env.DB_HOST !== "localhost" ? { rejectUnauthorized: false } : undefined,
-});
-
+// Configuración de NextAuth
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "text" },
+        email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        console.log("Credentials received:", credentials);
-
         if (!credentials?.email || !credentials?.password) {
-          console.log("Missing credentials");
-          return null;
+          throw new Error("Email y contraseña son requeridos");
         }
 
-        const client = await pool.connect();
-        console.log("Database connection established");
-
         try {
-          const result = await client.query(
-            "SELECT id, email, password, role, nombre, apellido FROM users WHERE email = $1",
-            [credentials.email]
-          );
-          const user = result.rows[0];
-          if (!user) {
-            console.log("No user found for email:", credentials.email);
-            return null;
+          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
+          const response = await axios.post(`${backendUrl}/api/users/login`, {
+            email: credentials.email,
+            password: credentials.password,
+          });
+
+          console.log("Respuesta de login:", response.data);
+
+          const user = response.data;
+          if (user && user.id) {
+            return {
+              id: user.id.toString(),
+              email: user.email,
+              nombre: user.nombre,
+              apellido: user.apellido,
+              role: user.role,
+            };
           }
-
-          console.log("User from DB:", user);
-
-          if (typeof user.password !== "string") {
-            console.error("Database password is not a string:", user.password);
-            return null;
-          }
-
-          const passwordMatch = await compare(credentials.password, user.password);
-          if (!passwordMatch) {
-            console.log("Password mismatch for:", credentials.email);
-            return null;
-          }
-
-          return {
-            id: user.id.toString(),
-            email: user.email,
-            nombre: user.nombre,
-            apellido: user.apellido,
-            role: user.role || "cliente",
-          };
-        } catch (error) {
-          console.error("Authorize error:", error);
-          return null;
-        } finally {
-          client.release();
+          throw new Error("No se encontró ID de usuario en la respuesta");
+        } catch (error: any) {
+          console.error("Error en authorize:", error);
+          throw new Error(error.response?.data?.message || "Error al autenticar");
         }
       },
     }),
   ],
-  pages: {
-    signIn: "/login",
-  },
-  secret: process.env.NEXTAUTH_SECRET,
-  session: {
-    strategy: "jwt",
-  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        token.id = user.id;
+        token.email = user.email;
         token.nombre = user.nombre;
         token.apellido = user.apellido;
-        token.email = user.email;
         token.role = user.role;
       }
-      console.log("JWT Token:", token);
+      // Mapear sub a id si sub existe
+      if (token.sub && !token.id) {
+        token.id = token.sub;
+      }
+      console.log("JWT callback:", { token, user });
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.nombre = token.nombre;
-        session.user.apellido = token.apellido;
-        session.user.email = token.email;
-        session.user.role = token.role as "admin" | "cliente";
+      if (token.id) {
+        session.user.id = token.id;
+        session.user.email = token.email ?? null;
+        session.user.nombre = token.nombre ?? null;
+        session.user.apellido = token.apellido ?? null;
+        session.user.role = token.role ?? null;
       }
-      console.log("Session:", session);
+      console.log("Session callback:", { session, token });
       return session;
     },
   },
+  pages: {
+    signIn: "/login",
+    error: "/auth/error",
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NEXTAUTH_DEBUG === "true",
 };
+
+export default NextAuth(authOptions);

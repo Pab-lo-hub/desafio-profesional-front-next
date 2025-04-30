@@ -1,4 +1,3 @@
-// src/app/admin/categorias/page.tsx (hipotético)
 "use client";
 
 import { useState, useEffect } from "react";

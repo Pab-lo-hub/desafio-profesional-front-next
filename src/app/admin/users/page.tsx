@@ -12,7 +12,7 @@ interface User {
   id: number;
   nombre: string;
   apellido: string;
-  email: string;
+  email?: string;
   role: string;
 }
 
