@@ -1,32 +1,46 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import Image from "next/image";
-import Link from "next/link";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
-import { Dialog, DialogPanel } from "@headlessui/react";
-import { FaWifi, FaTv, FaCar, FaSwimmingPool, FaPaw, FaSnowflake, FaWhatsapp, FaTwitter, FaTelegramPlane, FaFacebook, FaStar } from "react-icons/fa";
-import { IconType } from "react-icons";
-import HeaderWithSession from "@/app/Components/HeaderWithSession";
-import Footer from "@/app/Components/Footer";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+// Importaciones de dependencias y componentes
+import React, { useState, useEffect } from "react"; // React y hooks para estado y efectos
+import axios from "axios"; // Cliente HTTP para solicitudes al backend
+import Image from "next/image"; // Componente optimizado de Next.js para imágenes
+import Link from "next/link"; // Componente de Next.js para navegación
+import { useSession } from "next-auth/react"; // Hook para manejar sesiones de autenticación
+import { useRouter } from "next/navigation"; // Hook para navegación programática
+import { ArrowLeftIcon } from "@heroicons/react/24/outline"; // Ícono de flecha para botón de volver
+import { Dialog, DialogPanel } from "@headlessui/react"; // Componentes para diálogos modales
+import {
+  FaWifi,
+  FaTv,
+  FaCar,
+  FaSwimmingPool,
+  FaPaw,
+  FaSnowflake,
+  FaWhatsapp,
+  FaTwitter,
+  FaTelegramPlane,
+  FaFacebook,
+  FaStar,
+} from "react-icons/fa"; // Íconos de react-icons para características y compartir
+import { IconType } from "react-icons"; // Tipo para íconos
+import HeaderWithSession from "@/app/Components/HeaderWithSession"; // Componente de encabezado con soporte para sesión
+import Footer from "@/app/Components/Footer"; // Componente de pie de página
+import DatePicker from "react-datepicker"; // Componente para selección de fechas
+import "react-datepicker/dist/react-datepicker.css"; // Estilos para DatePicker
+import WhatsAppButton from "@/app/Components/WhatsAppButton"; // Botón flotante para WhatsApp
 
-// Interfaz para una característica
+// Definición de interfaces para tipado de datos
 interface Feature {
   id: number;
   nombre: string;
   icono: string;
 }
 
-// Interfaz para una imagen
 interface ProductImage {
   id: number;
   ruta: string;
 }
 
-// Interfaz para disponibilidad
 interface Availability {
   id: number;
   fechaInicio: string;
@@ -34,14 +48,12 @@ interface Availability {
   estado: string;
 }
 
-// Interfaz para una política
 interface Politica {
   id: number;
   titulo: string;
   descripcion: string;
 }
 
-// Interfaz para una puntuación
 interface Puntuacion {
   id: number;
   productoId: number;
@@ -49,7 +61,6 @@ interface Puntuacion {
   estrellas: number;
 }
 
-// Interfaz para un producto
 interface Product {
   id: number;
   nombre: string;
@@ -58,12 +69,11 @@ interface Product {
   features: Feature[];
 }
 
-// Interfaz para los props del componente
 interface ProductPageProps {
   params: Promise<{ id: string }>;
 }
 
-// Lista de iconos disponibles para características
+// Lista de íconos disponibles para las características (definida en el ámbito global)
 const availableIcons: { name: string; icon: IconType }[] = [
   { name: "FaWifi", icon: FaWifi },
   { name: "FaTv", icon: FaTv },
@@ -73,7 +83,9 @@ const availableIcons: { name: string; icon: IconType }[] = [
   { name: "FaSnowflake", icon: FaSnowflake },
 ];
 
-// Componente para la galería de imágenes del producto
+// Componente para mostrar la galería de imágenes del producto
+// @param imagenes - Lista de imágenes del producto
+// @param backendUrl - URL base del backend para cargar imágenes
 function ProductImageGallery({
   imagenes,
   backendUrl,
@@ -81,19 +93,27 @@ function ProductImageGallery({
   imagenes: ProductImage[];
   backendUrl: string;
 }) {
+  // Estado para controlar la apertura del modal de imágenes
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Abre el modal
   const openModal = () => setIsModalOpen(true);
+  // Cierra el modal
   const closeModal = () => setIsModalOpen(false);
 
+  // Limita las imágenes mostradas a 5
   const displayImages = imagenes.slice(0, 5);
+  // Imagen principal (primera de la lista o placeholder)
   const mainImage = displayImages[0] || { id: 0, ruta: "/placeholder.png" };
+  // Imágenes secundarias para la cuadrícula
   const gridImages = displayImages.slice(1, 5);
 
   return (
     <>
+      {/* Contenedor de la galería */}
       <div className="w-full">
         <div className="md:grid md:grid-cols-2 md:gap-4 flex flex-col gap-4">
+          {/* Imagen principal */}
           <div className="relative h-96">
             <Image
               src={`${backendUrl}${mainImage.ruta}`}
@@ -103,6 +123,7 @@ function ProductImageGallery({
               sizes="(max-width: 768px) 100vw, 50vw"
             />
           </div>
+          {/* Cuadrícula de imágenes secundarias */}
           <div className="grid grid-cols-2 grid-rows-2 gap-4 relative">
             {gridImages.map((img, index) => (
               <div key={img.id} className="relative h-44">
@@ -115,6 +136,7 @@ function ProductImageGallery({
                 />
               </div>
             ))}
+            {/* Placeholders para completar la cuadrícula si hay menos de 4 imágenes */}
             {gridImages.length < 4 &&
               Array.from({ length: 4 - gridImages.length }).map((_, index) => (
                 <div key={`placeholder-${index}`} className="relative h-44">
@@ -127,6 +149,7 @@ function ProductImageGallery({
                   />
                 </div>
               ))}
+            {/* Botón para ver más imágenes si hay más de 5 */}
             {imagenes.length > 5 && (
               <button
                 onClick={openModal}
@@ -139,6 +162,7 @@ function ProductImageGallery({
         </div>
       </div>
 
+      {/* Modal para mostrar todas las imágenes */}
       <Dialog open={isModalOpen} onClose={closeModal} className="relative z-50">
         <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
@@ -170,8 +194,10 @@ function ProductImageGallery({
   );
 }
 
-// Componente para el bloque de características
+// Componente para mostrar las características del producto
+// @param features - Lista de características del producto
 function ProductFeatures({ features }: { features: Feature[] }) {
+  // Renderiza el ícono correspondiente a cada característica
   const renderIcon = (icono: string) => {
     const iconObj = availableIcons.find((i) => i.name === icono);
     if (!iconObj) return <span className="text-gray-700">Icono no encontrado</span>;
@@ -201,12 +227,17 @@ function ProductFeatures({ features }: { features: Feature[] }) {
   );
 }
 
-// Componente para disponibilidad
+// Componente para mostrar la disponibilidad y permitir reservas
+// @param productId - ID del producto
+// @param backendUrl - URL base del backend
 function ProductAvailability({ productId, backendUrl }: { productId: number; backendUrl: string }) {
-  const [availabilities, setAvailabilities] = useState<Availability[]>([]);
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
+  const { data: session, status } = useSession(); // Obtiene la sesión del usuario
+  const router = useRouter(); // Hook para navegación
+  const [availabilities, setAvailabilities] = useState<Availability[]>([]); // Estado para disponibilidades
+  const [startDate, setStartDate] = useState<Date | null>(null); // Fecha de inicio seleccionada
+  const [endDate, setEndDate] = useState<Date | null>(null); // Fecha de fin seleccionada
 
+  // Carga las disponibilidades del producto al montar el componente
   useEffect(() => {
     const fetchAvailability = async () => {
       try {
@@ -219,6 +250,7 @@ function ProductAvailability({ productId, backendUrl }: { productId: number; bac
     fetchAvailability();
   }, [productId, backendUrl]);
 
+  // Filtra fechas disponibles para el DatePicker
   const includeDates = availabilities
     .filter((a) => a.estado === "DISPONIBLE")
     .map((a) => ({
@@ -226,12 +258,14 @@ function ProductAvailability({ productId, backendUrl }: { productId: number; bac
       end: new Date(a.fechaFin),
     }));
 
+  // Interfaz para las propiedades del input personalizado de DatePicker
   interface CustomInputProps {
     value?: string;
     onClick?: () => void;
     placeholder?: string;
   }
 
+  // Input personalizado para DatePicker
   const CustomInput = React.forwardRef<HTMLInputElement, CustomInputProps>(
     ({ value = "", onClick = () => {}, placeholder = "" }, ref) => (
       <div className="relative">
@@ -260,10 +294,14 @@ function ProductAvailability({ productId, backendUrl }: { productId: number; bac
 
   CustomInput.displayName = "CustomInput";
 
+  // Maneja el clic en el botón de reservar
   const handleReserve = () => {
+    if (status === "unauthenticated") {
+      router.push(`/login?callbackUrl=/products/${productId}/reserve`);
+      return;
+    }
     if (startDate && endDate) {
-      console.log("Reserving:", { productId, startDate, endDate });
-      // Navigate to reservation page or open modal
+      router.push(`/products/${productId}/reserve?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
     } else {
       alert("Por favor, selecciona un rango de fechas");
     }
@@ -274,6 +312,7 @@ function ProductAvailability({ productId, backendUrl }: { productId: number; bac
       <h2 className="text-2xl font-semibold text-gray-900 mb-4">Disponibilidad</h2>
       <div className="flex flex-col sm:flex-row gap-4 items-start">
         <div className="flex gap-3">
+          {/* Selector de fecha de inicio */}
           <DatePicker
             selected={startDate}
             onChange={(date: Date | null) => setStartDate(date)}
@@ -285,6 +324,7 @@ function ProductAvailability({ productId, backendUrl }: { productId: number; bac
             placeholderText="Fecha Inicio"
             isClearable
           />
+          {/* Selector de fecha de fin */}
           <DatePicker
             selected={endDate}
             onChange={(date: Date | null) => setEndDate(date)}
@@ -298,6 +338,7 @@ function ProductAvailability({ productId, backendUrl }: { productId: number; bac
             isClearable
           />
         </div>
+        {/* Botón para iniciar el proceso de reserva */}
         <button
           onClick={handleReserve}
           className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 transition-colors"
@@ -309,7 +350,8 @@ function ProductAvailability({ productId, backendUrl }: { productId: number; bac
   );
 }
 
-// Componente para políticas
+// Componente para mostrar las políticas del producto
+// @param politicas - Lista de políticas
 function ProductPolicies({ politicas }: { politicas: Politica[] }) {
   return (
     <div className="mt-8 w-full">
@@ -330,13 +372,17 @@ function ProductPolicies({ politicas }: { politicas: Politica[] }) {
   );
 }
 
-// Componente para puntuaciones
+// Componente para mostrar y gestionar valoraciones del producto
+// @param productId - ID del producto
+// @param usuarioId - ID del usuario (puede ser null si no está autenticado)
+// @param backendUrl - URL base del backend
 function ProductRatings({ productId, usuarioId, backendUrl }: { productId: number; usuarioId: number | null; backendUrl: string }) {
-  const [puntuaciones, setPuntuaciones] = useState<Puntuacion[]>([]);
-  const [canRate, setCanRate] = useState(false);
-  const [userRating, setUserRating] = useState<number | null>(null);
-  const [hoverRating, setHoverRating] = useState<number | null>(null);
+  const [puntuaciones, setPuntuaciones] = useState<Puntuacion[]>([]); // Lista de valoraciones
+  const [canRate, setCanRate] = useState(false); // Indica si el usuario puede puntuar
+  const [userRating, setUserRating] = useState<number | null>(null); // Puntuación del usuario
+  const [hoverRating, setHoverRating] = useState<number | null>(null); // Puntuación al pasar el ratón
 
+  // Carga las valoraciones del producto
   useEffect(() => {
     const fetchPuntuaciones = async () => {
       try {
@@ -346,7 +392,11 @@ function ProductRatings({ productId, usuarioId, backendUrl }: { productId: numbe
         console.error("Error fetching puntuaciones:", error);
       }
     };
+    fetchPuntuaciones();
+  }, [productId, backendUrl]);
 
+  // Verifica si el usuario puede puntuar y obtiene su puntuación existente
+  useEffect(() => {
     const checkCanRate = async () => {
       if (usuarioId) {
         try {
@@ -361,11 +411,10 @@ function ProductRatings({ productId, usuarioId, backendUrl }: { productId: numbe
         }
       }
     };
-
-    fetchPuntuaciones();
     checkCanRate();
-  }, [productId, usuarioId, backendUrl]);
+  }, [productId, usuarioId, backendUrl, puntuaciones]);
 
+  // Maneja el envío de una nueva puntuación
   const handleRating = async (estrellas: number) => {
     if (!usuarioId) {
       alert("Debes iniciar sesión para puntuar");
@@ -390,6 +439,7 @@ function ProductRatings({ productId, usuarioId, backendUrl }: { productId: numbe
     }
   };
 
+  // Calcula el promedio de valoraciones
   const averageRating = puntuaciones.length > 0
     ? (puntuaciones.reduce((sum, p) => sum + p.estrellas, 0) / puntuaciones.length).toFixed(1)
     : "0.0";
@@ -441,7 +491,11 @@ function ProductRatings({ productId, usuarioId, backendUrl }: { productId: numbe
   );
 }
 
-// Componente para compartir
+// Componente para compartir el producto en redes sociales
+// @param isOpen - Indica si el modal está abierto
+// @param onClose - Función para cerrar el modal
+// @param productName - Nombre del producto
+// @param productId - ID del producto
 function ShareProduct({
   isOpen,
   onClose,
@@ -498,44 +552,41 @@ function ShareProduct({
   );
 }
 
-// Componente principal
+// Componente principal para la página de detalles del producto
+// @param params - Parámetros dinámicos de la ruta, contiene el ID del producto
 export default function ProductDetailPage({ params }: ProductPageProps) {
-  const [product, setProduct] = useState<Product | null>(null);
-  const [politicas, setPoliticas] = useState<Politica[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isShareOpen, setIsShareOpen] = useState(false);
-  const [usuarioId, setUsuarioId] = useState<number | null>(null); // Simulación, ajustar según autenticación
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
+  const { data: session } = useSession(); // Obtiene la sesión del usuario
+  const [product, setProduct] = useState<Product | null>(null); // Estado para los datos del producto
+  const [politicas, setPoliticas] = useState<Politica[]>([]); // Estado para las políticas
+  const [loading, setLoading] = useState(true); // Estado para indicar carga
+  const [error, setError] = useState<string | null>(null); // Estado para errores
+  const [isShareOpen, setIsShareOpen] = useState(false); // Estado para el modal de compartir
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080"; // URL del backend
 
+  // Carga los datos del producto y las políticas al montar el componente
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const resolvedParams = await params;
+        const resolvedParams = await params; // Resuelve los parámetros dinámicos
         const id = resolvedParams.id;
 
+        // Valida que el ID sea un número
         if (!/^\d+$/.test(id)) {
           throw new Error("El ID del producto debe ser un número");
         }
 
-        console.log("Fetching product ID:", id);
+        // Obtiene los datos del producto
         const productResponse = await axios.get<Product>(`${backendUrl}/api/productos/${id}`, {
           headers: { "Content-Type": "application/json" },
         });
-        console.log("Product fetched:", productResponse.data);
         setProduct(productResponse.data);
 
-        console.log("Fetching politicas for ID:", id);
+        // Obtiene las políticas del producto
         const politicasResponse = await axios.get<Politica[]>(`${backendUrl}/api/productos/${id}/politicas`);
-        console.log("Politicas fetched:", politicasResponse.data);
         setPoliticas(politicasResponse.data);
-
-        // Simulación: Obtener usuarioId desde la sesión (ajustar según tu sistema de autenticación)
-        setUsuarioId(1); // Reemplazar con lógica real, ej: obtener desde JWT o contexto de autenticación
 
         setLoading(false);
       } catch (err: any) {
-        console.error("Error fetching data:", err.response?.data, err.response?.status);
         setError(err.response?.data?.message || "No se pudo cargar el producto");
         setLoading(false);
       }
@@ -544,6 +595,7 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
     fetchData();
   }, [params]);
 
+  // Renderiza un mensaje de carga mientras se obtienen los datos
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -558,6 +610,7 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
     );
   }
 
+  // Renderiza un mensaje de error si falla la carga o no se encuentra el producto
   if (error || !product) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -572,9 +625,14 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
     );
   }
 
+  // Convierte el ID del usuario de string a number (si existe)
+  const usuarioId = session?.user?.id ? parseInt(session.user.id, 10) : null;
+
   return (
     <div className="flex flex-col min-h-screen">
+      {/* Encabezado con soporte para sesión */}
       <HeaderWithSession className="z-50" />
+      {/* Contenido principal */}
       <main className="flex-grow pt-36">
         <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8">
           <div className="bg-white shadow-lg rounded-lg overflow-hidden">
@@ -582,6 +640,7 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
               <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-gray-900 text-left">{product.nombre}</h1>
                 <div className="flex items-center space-x-4">
+                  {/* Botón para volver a la página principal */}
                   <Link
                     href="/"
                     className="text-gray-600 hover:text-gray-900 flex items-center"
@@ -589,6 +648,7 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
                     <ArrowLeftIcon className="h-6 w-6 mr-2" />
                     Volver
                   </Link>
+                  {/* Botón para abrir el modal de compartir */}
                   <button
                     onClick={() => setIsShareOpen(true)}
                     className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
@@ -609,13 +669,17 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
           </div>
         </div>
       </main>
+      {/* Pie de página */}
       <Footer />
+      {/* Modal para compartir el producto */}
       <ShareProduct
         isOpen={isShareOpen}
         onClose={() => setIsShareOpen(false)}
         productName={product.nombre}
         productId={product.id.toString()}
       />
+      {/* Botón flotante de WhatsApp */}
+      <WhatsAppButton />
     </div>
   );
 }

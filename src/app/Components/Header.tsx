@@ -28,7 +28,6 @@ import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { Button } from "@headlessui/react";
 
-// Lista de productos para el menú desplegable
 const products = [
   { name: "Categorías", description: "Get a better understanding of your traffic", href: "/categorias", icon: ChartPieIcon },
   { name: "Productos", description: "Speak directly to your customers", href: "/productos", icon: CursorArrowRaysIcon },
@@ -37,18 +36,15 @@ const products = [
   { name: "Automations", description: "Build strategic funnels that will convert", href: "#", icon: ArrowPathIcon },
 ];
 
-// Llamadas a la acción para el menú desplegable
 const callsToAction = [
   { name: "Watch demo", href: "#", icon: PlayCircleIcon },
   { name: "Contact sales", href: "#", icon: PhoneIcon },
 ];
 
-// Interfaz para los props del componente Header
 interface HeaderProps {
-  className?: string; // Clases CSS opcionales para personalizar el estilo
+  className?: string;
 }
 
-// Función para obtener las iniciales del usuario
 const getInitials = (nombre?: string, apellido?: string, email?: string): string => {
   if (nombre && apellido) {
     return `${nombre[0] || ""}${apellido[0] || ""}`.toUpperCase();
@@ -60,18 +56,13 @@ const getInitials = (nombre?: string, apellido?: string, email?: string): string
   return "??";
 };
 
-// Componente principal del header
 const Header: React.FC<HeaderProps> = ({ className = "" }) => {
-  // Estado para controlar si el menú móvil está abierto
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  // Obtener la sesión del usuario
   const { data: session, status } = useSession();
 
-  // Determinar si el usuario está logueado y si es admin
   const isLoggedIn = status === "authenticated";
   const isAdmin = isLoggedIn && session?.user?.role === "admin";
 
-  // Obtener datos del usuario
   const userNombre = session?.user?.nombre || undefined;
   const userApellido = session?.user?.apellido || undefined;
   const userEmail = session?.user?.email || undefined;
@@ -80,9 +71,7 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
 
   return (
     <header className={`fixed top-0 left-0 w-full bg-white shadow-md z-50 ${className}`}>
-      {/* Barra de navegación principal */}
       <nav aria-label="Global" className="mx-auto flex max-w-7xl items-center justify-between p-1 lg:px-4">
-        {/* Logo y enlace a la página principal */}
         <div className="flex lg:flex-1">
           <Link href="/" className="-m-1 p-1">
             <span className="sr-only">Rent</span>
@@ -96,7 +85,6 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
             />
           </Link>
         </div>
-        {/* Botón para abrir el menú móvil (visible en pantallas pequeñas) */}
         <div className="flex lg:hidden">
           <button
             type="button"
@@ -107,7 +95,6 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
             <Bars3Icon aria-hidden="true" className="size-6" />
           </button>
         </div>
-        {/* Botones de acción para pantallas grandes */}
         <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-x-4">
           {isLoggedIn ? (
             <div className="flex items-center gap-x-4">
@@ -124,10 +111,16 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
                 <HeartIcon className="size-5 mr-1" />
                 Favoritos
               </Link>
+              <Link
+                href="/reservations"
+                className="bg-transparent hover:bg-blue-400 text-blue-400 font-semibold hover:text-white py-1 px-2 border border-blue-300 hover:border-transparent rounded text-sm"
+              >
+                Mis Reservas
+              </Link>
               {isAdmin && (
                 <Link
                   href="/admin"
-                  className="bg-transparent hover:bg-blue-400 text-blue-400 font-semibold hover:text-white py-1 px-2 border border-blue-300 hover:border-transparent rounded mx-2 text-sm"
+                  className="bg-transparent hover:bg-blue-400 text-blue-400 font-semibold hover:text-white py-1 px-2 border border-blue-300 hover:border-transparent rounded text-sm"
                 >
                   Panel Admin
                 </Link>
@@ -157,7 +150,6 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
           )}
         </div>
       </nav>
-      {/* Menú móvil (visible en pantallas pequeñas) */}
       <Dialog open={mobileMenuOpen} onClose={setMobileMenuOpen} className="lg:hidden">
         <div className="fixed inset-0 z-10" />
         <DialogPanel className="fixed inset-y-0 right-0 z-10 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
@@ -233,6 +225,12 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
                     >
                       <HeartIcon className="size-5 mr-2" />
                       Favoritos
+                    </Link>
+                    <Link
+                      href="/reservations"
+                      className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-gray-900 hover:bg-gray-50"
+                    >
+                      Mis Reservas
                     </Link>
                     {isAdmin && (
                       <Link
