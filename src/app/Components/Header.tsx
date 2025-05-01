@@ -20,6 +20,7 @@ import {
   FingerPrintIcon,
   SquaresPlusIcon,
   XMarkIcon,
+  HeartIcon,
 } from "@heroicons/react/24/outline";
 import { ChevronDownIcon, PhoneIcon, PlayCircleIcon } from "@heroicons/react/20/solid";
 import Image from "next/image";
@@ -110,13 +111,19 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
         <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-x-4">
           {isLoggedIn ? (
             <div className="flex items-center gap-x-4">
-
               <div className="flex items-center gap-x-2">
                 <div className="flex size-10 items-center justify-center rounded-full bg-blue-500 text-white font-semibold">
                   {initials}
                 </div>
                 <span className="text-sm font-semibold text-gray-900">{displayName}</span>
               </div>
+              <Link
+                href="/favorites"
+                className="bg-transparent hover:bg-blue-400 text-blue-400 font-semibold hover:text-white py-1 px-2 border border-blue-300 hover:border-transparent rounded text-sm flex items-center"
+              >
+                <HeartIcon className="size-5 mr-1" />
+                Favoritos
+              </Link>
               {isAdmin && (
                 <Link
                   href="/admin"
@@ -220,6 +227,13 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
               <div className="py-6">
                 {isLoggedIn ? (
                   <>
+                    <Link
+                      href="/favorites"
+                      className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold text-gray-900 hover:bg-gray-50 flex items-center"
+                    >
+                      <HeartIcon className="size-5 mr-2" />
+                      Favoritos
+                    </Link>
                     {isAdmin && (
                       <Link
                         href="/admin"
