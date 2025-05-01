@@ -183,7 +183,7 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
   // Renderizado del componente
   return (
     <div className="pt-1">
-      <div className="mx-auto max-w-2xl px-1 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8">
+      <div className="mx-auto max-w-2xl px-1 py-4 sm:px-4 sm:py-4 lg:max-w-7xl lg:px-8">
         <h2 className="text-2xl font-bold mb-6">Productos</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-10">
           {randomProducts.map((product) => {
@@ -248,8 +248,8 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
                       </>
                     )}
                   </div>
-                  <h3 className="mt-4 text-sm text-gray-700">{product.nombre}</h3>
-                  <p className="mt-1 text-lg font-medium text-gray-900">{product.price || "Precio no disponible"}</p>
+                  <h3 className="mt-4 text-sm text-gray-700">{product.descripcion}</h3>
+                  <p className="mt-1 text-lg font-medium text-gray-900">{product.nombre || "Nombre no disponible"}</p>
                 </Link>
                 <button
                   onClick={(e) => toggleFavorite(product.id, e)}
