@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { Dialog, DialogPanel } from "@headlessui/react";
-import { FaWifi, FaTv, FaCar, FaSwimmingPool, FaPaw, FaSnowflake, FaWhatsapp, FaTwitter, FaTelegramPlane, FaFacebook } from "react-icons/fa";
+import { FaWifi, FaTv, FaCar, FaSwimmingPool, FaPaw, FaSnowflake, FaWhatsapp, FaTwitter, FaTelegramPlane, FaFacebook, FaStar } from "react-icons/fa";
 import { IconType } from "react-icons";
 import HeaderWithSession from "@/app/Components/HeaderWithSession";
 import Footer from "@/app/Components/Footer";
@@ -39,6 +39,14 @@ interface Politica {
   id: number;
   titulo: string;
   descripcion: string;
+}
+
+// Interfaz para una puntuación
+interface Puntuacion {
+  id: number;
+  productoId: number;
+  usuarioId: number;
+  estrellas: number;
 }
 
 // Interfaz para un producto
@@ -322,6 +330,117 @@ function ProductPolicies({ politicas }: { politicas: Politica[] }) {
   );
 }
 
+// Componente para puntuaciones
+function ProductRatings({ productId, usuarioId, backendUrl }: { productId: number; usuarioId: number | null; backendUrl: string }) {
+  const [puntuaciones, setPuntuaciones] = useState<Puntuacion[]>([]);
+  const [canRate, setCanRate] = useState(false);
+  const [userRating, setUserRating] = useState<number | null>(null);
+  const [hoverRating, setHoverRating] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchPuntuaciones = async () => {
+      try {
+        const response = await axios.get<Puntuacion[]>(`${backendUrl}/api/productos/${productId}/puntuaciones`);
+        setPuntuaciones(response.data);
+      } catch (error) {
+        console.error("Error fetching puntuaciones:", error);
+      }
+    };
+
+    const checkCanRate = async () => {
+      if (usuarioId) {
+        try {
+          const response = await axios.get<boolean>(`${backendUrl}/api/productos/${productId}/can-rate?usuarioId=${usuarioId}`);
+          setCanRate(response.data);
+          const userPuntuacion = puntuaciones.find(p => p.usuarioId === usuarioId);
+          if (userPuntuacion) {
+            setUserRating(userPuntuacion.estrellas);
+          }
+        } catch (error) {
+          console.error("Error checking can rate:", error);
+        }
+      }
+    };
+
+    fetchPuntuaciones();
+    checkCanRate();
+  }, [productId, usuarioId, backendUrl]);
+
+  const handleRating = async (estrellas: number) => {
+    if (!usuarioId) {
+      alert("Debes iniciar sesión para puntuar");
+      return;
+    }
+    if (!canRate) {
+      alert("No puedes puntuar este producto porque no tienes una reserva finalizada");
+      return;
+    }
+    try {
+      const response = await axios.post<Puntuacion>(`${backendUrl}/api/productos/${productId}/puntuaciones`, {
+        productId,
+        usuarioId,
+        estrellas,
+      });
+      setPuntuaciones([...puntuaciones, response.data]);
+      setUserRating(estrellas);
+      setCanRate(false);
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+      alert("Error al enviar la puntuación");
+    }
+  };
+
+  const averageRating = puntuaciones.length > 0
+    ? (puntuaciones.reduce((sum, p) => sum + p.estrellas, 0) / puntuaciones.length).toFixed(1)
+    : "0.0";
+
+  return (
+    <div className="mt-8 w-full">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-4">Valoraciones</h2>
+      <div className="mb-4">
+        <p className="text-gray-700">Promedio: {averageRating} / 5 ({puntuaciones.length} valoraciones)</p>
+      </div>
+      {usuarioId && (
+        <div className="mb-4">
+          <p className="text-gray-700 mb-2">Tu puntuación:</p>
+          <div className="flex">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <FaStar
+                key={star}
+                className={`h-6 w-6 cursor-pointer ${
+                  (hoverRating ?? userRating ?? 0) >= star ? "text-yellow-400" : "text-gray-300"
+                }`}
+                onClick={() => handleRating(star)}
+                onMouseEnter={() => setHoverRating(star)}
+                onMouseLeave={() => setHoverRating(null)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+      {puntuaciones.length > 0 ? (
+        <div className="space-y-2">
+          {puntuaciones.map((puntuacion) => (
+            <div key={puntuacion.id} className="flex items-center">
+              <div className="flex mr-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <FaStar
+                    key={star}
+                    className={`h-5 w-5 ${puntuacion.estrellas >= star ? "text-yellow-400" : "text-gray-300"}`}
+                  />
+                ))}
+              </div>
+              <span className="text-gray-700">{puntuacion.estrellas} estrellas</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-gray-700">No hay valoraciones para este producto.</p>
+      )}
+    </div>
+  );
+}
+
 // Componente para compartir
 function ShareProduct({
   isOpen,
@@ -386,6 +505,7 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [usuarioId, setUsuarioId] = useState<number | null>(null); // Simulación, ajustar según autenticación
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
   useEffect(() => {
@@ -409,6 +529,9 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
         const politicasResponse = await axios.get<Politica[]>(`${backendUrl}/api/productos/${id}/politicas`);
         console.log("Politicas fetched:", politicasResponse.data);
         setPoliticas(politicasResponse.data);
+
+        // Simulación: Obtener usuarioId desde la sesión (ajustar según tu sistema de autenticación)
+        setUsuarioId(1); // Reemplazar con lógica real, ej: obtener desde JWT o contexto de autenticación
 
         setLoading(false);
       } catch (err: any) {
@@ -480,6 +603,7 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
                 <ProductFeatures features={product.features || []} />
                 <ProductAvailability productId={product.id} backendUrl={backendUrl} />
                 <ProductPolicies politicas={politicas} />
+                <ProductRatings productId={product.id} usuarioId={usuarioId} backendUrl={backendUrl} />
               </div>
             </div>
           </div>
