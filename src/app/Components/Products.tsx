@@ -19,28 +19,30 @@ interface Product {
 
 // Props del componente
 interface ProductsProps {
-  categoryId: number | null;
+  categoryId: number | null; // ID de la categoría (puede ser nulo)
   favoriteProducts?: Product[]; // Productos favoritos opcionales
 }
 
+// Componente principal para mostrar productos
 const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
-  // Estados para productos, favoritos, carrusel, carga y errores
+  // Obtiene la sesión del usuario
   const { data: session, status } = useSession();
+  // Estados para productos, favoritos, carrusel, carga y errores
   const [products, setProducts] = useState<Product[]>([]);
   const [randomProducts, setRandomProducts] = useState<Product[]>([]);
   const [favorites, setFavorites] = useState<number[]>([]); // IDs de productos favoritos
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentSlides, setCurrentSlides] = useState<{ [key: number]: number }>({});
+  // URL del backend desde variables de entorno
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
-  const productsToShow = 10;
+  const productsToShow = 10; // Número de productos a mostrar
+  // Imagen de respaldo para errores
   const fallbackImage = "https://tailwindui.com/plus-assets/img/ecommerce-images/category-page-04-image-card-01.jpg";
-
-  // Log para depurar la sesión
-  console.log("Estado de la sesión:", { status, session });
 
   // Efecto para cargar productos y favoritos
   useEffect(() => {
+    // Función para cargar productos
     const fetchProducts = async () => {
       try {
         if (!backendUrl) {
@@ -55,11 +57,12 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
           return;
         }
 
-        // De lo contrario, cargar desde el backend
+        // Construir la URL según si hay categoría
         const url = categoryId
           ? `${backendUrl}/api/productos?categoria_id=${categoryId}`
           : `${backendUrl}/api/productos`;
 
+        // Obtener productos del backend
         const response = await axios.get<Product[]>(url, {
           headers: { "Content-Type": "application/json" },
         });
@@ -76,6 +79,7 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
       }
     };
 
+    // Función para cargar favoritos
     const fetchFavorites = async () => {
       if (status === "authenticated" && session?.user?.id) {
         try {
@@ -85,14 +89,12 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
         } catch (err: any) {
           console.error("Error al cargar favoritos:", err.message);
         }
-      } else {
-        console.log("No se cargaron favoritos, estado de sesión:", { status, userId: session?.user?.id });
       }
     };
 
     fetchProducts();
     fetchFavorites();
-  }, [categoryId, status, session, favoriteProducts]);
+  }, [categoryId, status, session, favoriteProducts, backendUrl]);
 
   // Función para obtener productos aleatorios únicos
   const getRandomUniqueProducts = (allProducts: Product[], count: number): Product[] => {
@@ -169,35 +171,53 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
 
   // Manejo de estados de carga y error
   if (loading) {
-    return <div className="text-center py-16">Cargando...</div>;
+    return (
+      <div className="text-center py-16 bg-gradient-to-r from-indigo-50 to-blue-50">
+        Cargando...
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-center py-16 text-red-500">{error}</div>;
+    return (
+      <div className="text-center py-16 text-red-500 bg-gradient-to-r from-indigo-50 to-blue-50">
+        {error}
+      </div>
+    );
   }
 
   if (!Array.isArray(randomProducts)) {
-    return <div className="text-center py-16 text-red-500">Error: Los datos de productos no son un arreglo</div>;
+    return (
+      <div className="text-center py-16 text-red-500 bg-gradient-to-r from-indigo-50 to-blue-50">
+        Error: Los datos de productos no son un arreglo
+      </div>
+    );
   }
 
   // Renderizado del componente
   return (
-    <div className="pt-1">
-      <div className="mx-auto max-w-2xl px-1 py-4 sm:px-4 sm:py-4 lg:max-w-7xl lg:px-8">
-        <h2 className="text-2xl font-bold mb-6">Productos</h2>
+    // Contenedor con fondo degradado
+    <div className="pt-2 bg-gradient-to-r from-indigo-50 to-blue-50">
+      {/* Contenedor responsivo */}
+      <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-8 lg:max-w-7xl lg:px-8">
+        {/* Título principal */}
+        <h2 className="text-3xl font-bold text-gray-900 mb-6">Productos</h2>
+        {/* Cuadrícula de productos */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-10">
           {randomProducts.map((product) => {
             const currentSlide = currentSlides[product.id] || 0;
             const totalImages = product.imagenes?.length || 0;
-            const imageUrl = product.imagenes && product.imagenes.length > 0 && product.imagenes[currentSlide]?.ruta
-              ? (product.imagenes[currentSlide].ruta.startsWith('http')
+            const imageUrl =
+              product.imagenes && product.imagenes.length > 0 && product.imagenes[currentSlide]?.ruta
+                ? product.imagenes[currentSlide].ruta.startsWith("http")
                   ? product.imagenes[currentSlide].ruta
-                  : `${backendUrl}${product.imagenes[currentSlide].ruta}`)
-              : fallbackImage;
+                  : `${backendUrl}${product.imagenes[currentSlide].ruta}`
+                : fallbackImage;
 
             return (
               <div key={product.id} className="group relative">
                 <Link href={`/products/${product.id}`} className="block">
+                  {/* Contenedor de imagen */}
                   <div className="relative aspect-square w-full rounded-lg bg-gray-200 overflow-hidden">
                     <Image
                       src={imageUrl}
@@ -205,12 +225,13 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
                       fill
                       className="object-cover group-hover:opacity-75"
                       sizes="(max-width: 640px) 100vw, 50vw"
-                      priority // Añadido para resolver la advertencia de LCP
+                      priority
                       onError={(e) => {
                         console.log(`No se pudo cargar la imagen: ${imageUrl}`);
                         e.currentTarget.src = fallbackImage;
                       }}
                     />
+                    {/* Controles del carrusel */}
                     {totalImages > 1 && (
                       <>
                         <button
@@ -248,9 +269,12 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
                       </>
                     )}
                   </div>
-                  <h3 className="mt-4 text-sm text-gray-700">{product.descripcion}</h3>
-                  <p className="mt-1 text-lg font-medium text-gray-900">{product.nombre || "Nombre no disponible"}</p>
+                  {/* Descripción del producto */}
+                  <h3 className="mt-4 text-lg font-semibold text-gray-800">{product.descripcion}</h3>
+                  {/* Nombre del producto */}
+                  <p className="mt-1 text-xl font-medium text-gray-900">{product.nombre || "Nombre no disponible"}</p>
                 </Link>
+                {/* Botón de favorito */}
                 <button
                   onClick={(e) => toggleFavorite(product.id, e)}
                   className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100"
@@ -260,7 +284,7 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
                     className={`w-6 h-6 ${favorites.includes(product.id) ? "text-red-500" : "text-gray-400"}`}
                     fill={favorites.includes(product.id) ? "currentColor" : "none"}
                     stroke="currentColor"
-                    viewBox="0 0 24 24"
+                    viewBox="0 24 24"
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
