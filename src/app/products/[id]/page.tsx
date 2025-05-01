@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react"; 
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { Dialog, DialogPanel } from "@headlessui/react";
-import { FaWifi, FaTv, FaCar, FaSwimmingPool, FaPaw, FaSnowflake } from "react-icons/fa";
+import { FaWifi, FaTv, FaCar, FaSwimmingPool, FaPaw, FaSnowflake, FaWhatsapp, FaTwitter, FaTelegramPlane, FaFacebook } from "react-icons/fa";
 import { IconType } from "react-icons";
 import HeaderWithSession from "@/app/Components/HeaderWithSession";
 import Footer from "@/app/Components/Footer";
@@ -34,6 +34,13 @@ interface Availability {
   estado: string;
 }
 
+// Interfaz para una política
+interface Politica {
+  id: number;
+  titulo: string;
+  descripcion: string;
+}
+
 // Interfaz para un producto
 interface Product {
   id: number;
@@ -48,7 +55,7 @@ interface ProductPageProps {
   params: Promise<{ id: string }>;
 }
 
-// Lista de iconos disponibles
+// Lista de iconos disponibles para características
 const availableIcons: { name: string; icon: IconType }[] = [
   { name: "FaWifi", icon: FaWifi },
   { name: "FaTv", icon: FaTv },
@@ -294,15 +301,95 @@ function ProductAvailability({ productId, backendUrl }: { productId: number; bac
   );
 }
 
+// Componente para políticas
+function ProductPolicies({ politicas }: { politicas: Politica[] }) {
+  return (
+    <div className="mt-8 w-full">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-4">Políticas</h2>
+      {politicas.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {politicas.map((politica) => (
+            <div key={politica.id} className="border p-4 rounded-lg bg-gray-50">
+              <h3 className="font-semibold text-gray-900">{politica.titulo}</h3>
+              <p className="text-gray-700">{politica.descripcion}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-gray-700">No hay políticas disponibles para este producto.</p>
+      )}
+    </div>
+  );
+}
+
+// Componente para compartir
+function ShareProduct({
+  isOpen,
+  onClose,
+  productName,
+  productId,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  productName: string;
+  productId: string;
+}) {
+  const shareText = `Mira este increíble producto: ${productName}`;
+  const shareUrl = `http://localhost:3000/products/${productId}`;
+
+  const shareOptions = [
+    { name: "WhatsApp", icon: FaWhatsapp, url: `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + " " + shareUrl)}` },
+    { name: "X", icon: FaTwitter, url: `https://x.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}` },
+    { name: "Telegram", icon: FaTelegramPlane, url: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}` },
+    { name: "Facebook", icon: FaFacebook, url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}` },
+  ];
+
+  return (
+    <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+      <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <DialogPanel className="max-w-sm w-full bg-white rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-4">Compartir Producto</h2>
+          <div className="space-y-2">
+            {shareOptions.map((option) => {
+              const IconComponent = option.icon;
+              return (
+                <a
+                  key={option.name}
+                  href={option.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center p-2 hover:bg-gray-100 rounded"
+                >
+                  <IconComponent className="h-6 w-6 text-gray-700 mr-2" />
+                  <span className="text-gray-700">{option.name}</span>
+                </a>
+              );
+            })}
+          </div>
+          <button
+            onClick={onClose}
+            className="mt-4 w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+          >
+            Cerrar
+          </button>
+        </DialogPanel>
+      </div>
+    </Dialog>
+  );
+}
+
 // Componente principal
 export default function ProductDetailPage({ params }: ProductPageProps) {
   const [product, setProduct] = useState<Product | null>(null);
+  const [politicas, setPoliticas] = useState<Politica[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isShareOpen, setIsShareOpen] = useState(false);
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchData = async () => {
       try {
         const resolvedParams = await params;
         const id = resolvedParams.id;
@@ -312,21 +399,26 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
         }
 
         console.log("Fetching product ID:", id);
-        const response = await axios.get<Product>(`${backendUrl}/api/productos/${id}`, {
+        const productResponse = await axios.get<Product>(`${backendUrl}/api/productos/${id}`, {
           headers: { "Content-Type": "application/json" },
         });
+        console.log("Product fetched:", productResponse.data);
+        setProduct(productResponse.data);
 
-        console.log("Product fetched:", response.data);
-        setProduct(response.data);
+        console.log("Fetching politicas for ID:", id);
+        const politicasResponse = await axios.get<Politica[]>(`${backendUrl}/api/productos/${id}/politicas`);
+        console.log("Politicas fetched:", politicasResponse.data);
+        setPoliticas(politicasResponse.data);
+
         setLoading(false);
       } catch (err: any) {
-        console.error("Error fetching product:", err.response?.data, err.response?.status);
+        console.error("Error fetching data:", err.response?.data, err.response?.status);
         setError(err.response?.data?.message || "No se pudo cargar el producto");
         setLoading(false);
       }
     };
 
-    fetchProduct();
+    fetchData();
   }, [params]);
 
   if (loading) {
@@ -366,25 +458,40 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-gray-900 text-left">{product.nombre}</h1>
-                <Link
-                  href="/"
-                  className="text-gray-600 hover:text-gray-900 flex items-center"
-                >
-                  <ArrowLeftIcon className="h-6 w-6 mr-2" />
-                  Volver
-                </Link>
+                <div className="flex items-center space-x-4">
+                  <Link
+                    href="/"
+                    className="text-gray-600 hover:text-gray-900 flex items-center"
+                  >
+                    <ArrowLeftIcon className="h-6 w-6 mr-2" />
+                    Volver
+                  </Link>
+                  <button
+                    onClick={() => setIsShareOpen(true)}
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+                  >
+                    Compartir
+                  </button>
+                </div>
               </div>
               <div>
                 <p className="text-gray-700 mb-6">{product.descripcion}</p>
                 <ProductImageGallery imagenes={product.imagenes} backendUrl={backendUrl} />
                 <ProductFeatures features={product.features || []} />
                 <ProductAvailability productId={product.id} backendUrl={backendUrl} />
+                <ProductPolicies politicas={politicas} />
               </div>
             </div>
           </div>
         </div>
       </main>
       <Footer />
+      <ShareProduct
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        productName={product.nombre}
+        productId={product.id.toString()}
+      />
     </div>
   );
 }
