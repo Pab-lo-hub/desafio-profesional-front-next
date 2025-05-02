@@ -23,3 +23,36 @@ body {
 h2{
   color: Black;
 }
+
+/* Estilos para react-datepicker */
+.react-datepicker__day--disabled,
+.react-datepicker__day--excluded,
+.react-datepicker__day--outside-month {
+  background-color: #d1d5db !important; /* Gris claro */
+  color: #6b7280 !important; /* Gris oscuro para el texto */
+  cursor: not-allowed !important;
+  opacity: 0.6;
+}
+
+.react-datepicker__day--disabled:hover,
+.react-datepicker__day--excluded:hover {
+  background-color: #d1d5db !important; /* Mantener gris al pasar el mouse */
+}
+
+/* Asegurar que los días seleccionables sean distinguibles */
+.react-datepicker__day--in-range,
+.react-datepicker__day--in-selecting-range {
+  background-color: #4f46e5 !important; /* Indigo para el rango seleccionado */
+  color: #ffffff !important;
+}
+
+.react-datepicker__day--today {
+  border: 1px solid #4f46e5 !important; /* Resaltar el día actual */
+}
+
+/* Forzar visibilidad de fechas excluidas */
+.react-datepicker__day--keyboard-selected.react-datepicker__day--excluded,
+.react-datepicker__day--selected.react-datepicker__day--excluded {
+  background-color: #d1d5db !important;
+  color: #6b7280 !important;
+}

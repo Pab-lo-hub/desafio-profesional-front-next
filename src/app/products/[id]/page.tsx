@@ -1,14 +1,14 @@
 "use client";
 
 // Importaciones de dependencias y componentes
-import React, { useState, useEffect } from "react"; // React y hooks para estado y efectos
-import axios from "axios"; // Cliente HTTP para solicitudes al backend
-import Image from "next/image"; // Componente optimizado de Next.js para imágenes
-import Link from "next/link"; // Componente de Next.js para navegación
-import { useSession } from "next-auth/react"; // Hook para manejar sesiones de autenticación
-import { useRouter } from "next/navigation"; // Hook para navegación programática
-import { ArrowLeftIcon } from "@heroicons/react/24/outline"; // Ícono de flecha para botón de volver
-import { Dialog, DialogPanel } from "@headlessui/react"; // Componentes para diálogos modales
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import Image from "next/image";
+import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { Dialog, DialogPanel } from "@headlessui/react";
 import {
   FaWifi,
   FaTv,
@@ -26,13 +26,13 @@ import {
   FaBluetooth,
   FaBatteryFull,
   FaQuestion,
-} from "react-icons/fa"; // Íconos de react-icons para características, compartir y navegación
-import { IconType } from "react-icons"; // Tipo para íconos
-import HeaderWithSession from "@/app/Components/HeaderWithSession"; // Componente de encabezado con soporte para sesión
-import Footer from "@/app/Components/Footer"; // Componente de pie de página
-import DatePicker from "react-datepicker"; // Componente para selección de fechas
-import "react-datepicker/dist/react-datepicker.css"; // Estilos para DatePicker
-import WhatsAppButton from "@/app/Components/WhatsAppButton"; // Botón flotante para WhatsApp
+} from "react-icons/fa";
+import { IconType } from "react-icons";
+import HeaderWithSession from "@/app/Components/HeaderWithSession";
+import Footer from "@/app/Components/Footer";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import WhatsAppButton from "@/app/Components/WhatsAppButton";
 
 // Definición de interfaces para tipado de datos
 interface Feature {
@@ -51,6 +51,12 @@ interface Availability {
   fechaInicio: string;
   fechaFin: string;
   estado: string;
+}
+
+interface Reservation {
+  id: number;
+  startDate: string | null;
+  endDate: string | null;
 }
 
 interface Politica {
@@ -91,8 +97,6 @@ const availableIcons: { name: string; icon: IconType }[] = [
 ];
 
 // Componente para mostrar la galería de imágenes del producto
-// @param imagenes - Lista de imágenes del producto (0 a 6)
-// @param backendUrl - URL base del backend para cargar imágenes
 function ProductImageGallery({
   imagenes,
   backendUrl,
@@ -100,37 +104,27 @@ function ProductImageGallery({
   imagenes: ProductImage[];
   backendUrl: string;
 }) {
-  // Estado para controlar la apertura del modal de imágenes
   const [isModalOpen, setIsModalOpen] = useState(false);
-  // Estado para la imagen actual en el modal
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Abre el modal en la primera imagen
   const openModal = () => {
     setCurrentImageIndex(0);
     setIsModalOpen(true);
   };
-  // Cierra el modal
   const closeModal = () => setIsModalOpen(false);
 
-  // Navega a la imagen anterior
   const prevImage = () => {
     setCurrentImageIndex((prev) => (prev === 0 ? imagenes.length - 1 : prev - 1));
   };
 
-  // Navega a la imagen siguiente
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev === imagenes.length - 1 ? 0 : prev + 1));
   };
 
-  // Limita las imágenes mostradas a 5 para el bloque principal
   const displayImages = imagenes.slice(0, 5);
-  // Imagen principal (primera imagen o null si no hay imágenes)
   const mainImage = displayImages[0] || null;
-  // Imágenes secundarias (hasta 4 imágenes)
   const gridImages = displayImages.slice(1, 5);
 
-  // Determina la configuración de la grilla secundaria según la cantidad de imágenes secundarias
   const gridConfig = gridImages.length > 0 ? (
     gridImages.length === 1 ? "grid-cols-1 grid-rows-1" :
     gridImages.length === 2 ? "grid-cols-1 sm:grid-cols-2 grid-rows-2 sm:grid-rows-1" :
@@ -140,15 +134,12 @@ function ProductImageGallery({
 
   return (
     <>
-      {/* Contenedor de la galería, ocupa el 100% del ancho */}
       <div className="w-full mt-6">
         {displayImages.length === 0 ? (
           <p className="text-gray-500 text-center">No hay imágenes disponibles</p>
         ) : (
           <div className="relative">
-            {/* Cuadrícula principal: 2 columnas en escritorio, 1 en móvil */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Imagen principal (mitad izquierda en escritorio, completa en móvil) */}
               <div className="relative h-96">
                 {mainImage ? (
                   <Image
@@ -157,6 +148,7 @@ function ProductImageGallery({
                     fill
                     className="object-cover rounded-lg shadow-sm"
                     sizes="(max-width: 768px) 100vw, 50vw"
+                    priority
                     onError={() => console.error(`Error cargando imagen: ${mainImage.ruta}`)}
                   />
                 ) : (
@@ -165,7 +157,6 @@ function ProductImageGallery({
                   </div>
                 )}
               </div>
-              {/* Grilla secundaria (mitad derecha en escritorio, debajo en móvil) */}
               {gridImages.length > 0 && (
                 <div className={`grid ${gridConfig} gap-4`}>
                   {gridImages.map((img, index) => (
@@ -183,7 +174,6 @@ function ProductImageGallery({
                 </div>
               )}
             </div>
-            {/* Botón "Ver más" en la región inferior derecha */}
             <div className="absolute bottom-4 right-4">
               <button
                 onClick={openModal}
@@ -196,7 +186,6 @@ function ProductImageGallery({
         )}
       </div>
 
-      {/* Modal para mostrar imágenes en tamaño grande */}
       <Dialog open={isModalOpen} onClose={closeModal} className="relative z-50">
         <div className="fixed inset-0 bg-black/70" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
@@ -204,7 +193,6 @@ function ProductImageGallery({
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Vista de Imagen</h2>
             {imagenes.length > 0 ? (
               <div className="relative flex-grow flex items-center justify-center">
-                {/* Imagen actual en tamaño grande */}
                 <div className="relative w-full h-[60vh] max-h-[600px]">
                   <Image
                     src={`${backendUrl}${imagenes[currentImageIndex].ruta}`}
@@ -215,7 +203,6 @@ function ProductImageGallery({
                     onError={() => console.error(`Error cargando imagen: ${imagenes[currentImageIndex].ruta}`)}
                   />
                 </div>
-                {/* Botones de navegación */}
                 {imagenes.length > 1 && (
                   <>
                     <button
@@ -250,9 +237,7 @@ function ProductImageGallery({
 }
 
 // Componente para mostrar las características del producto
-// @param features - Lista de características del producto
 function ProductFeatures({ features }: { features: Feature[] }) {
-  // Renderiza el ícono correspondiente a cada característica
   const renderIcon = (icono: string) => {
     const iconObj = availableIcons.find((i) => i.name === icono);
     const IconComponent = iconObj ? iconObj.icon : FaQuestion;
@@ -282,44 +267,154 @@ function ProductFeatures({ features }: { features: Feature[] }) {
 }
 
 // Componente para mostrar la disponibilidad y permitir reservas
-// @param productId - ID del producto
-// @param backendUrl - URL base del backend
 function ProductAvailability({ productId, backendUrl }: { productId: number; backendUrl: string }) {
-  const { data: session, status } = useSession(); // Obtiene la sesión del usuario
-  const router = useRouter(); // Hook para navegación
-  const [availabilities, setAvailabilities] = useState<Availability[]>([]); // Estado para disponibilidades
-  const [startDate, setStartDate] = useState<Date | null>(null); // Fecha de inicio seleccionada
-  const [endDate, setEndDate] = useState<Date | null>(null); // Fecha de fin seleccionada
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [availabilities, setAvailabilities] = useState<Availability[]>([]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Carga las disponibilidades del producto al montar el componente
+  // Obtener disponibilidades y reservas al cargar el componente
   useEffect(() => {
-    const fetchAvailability = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get<Availability[]>(`${backendUrl}/api/productos/${productId}/availability`);
-        setAvailabilities(response.data);
-      } catch (error) {
-        console.error("Error fetching availability:", error);
+        // Obtener disponibilidades
+        const availabilityResponse = await axios.get<Availability[]>(
+          `${backendUrl}/api/productos/${productId}/availability`
+        );
+        console.log("Disponibilidades obtenidas:", availabilityResponse.data);
+        setAvailabilities(availabilityResponse.data);
+
+        // Obtener reservas existentes
+        const reservationsResponse = await axios.get<Reservation[]>(
+          `${backendUrl}/api/reservas/producto/${productId}`
+        );
+        console.log("Respuesta cruda de la API de reservas:", reservationsResponse.data);
+        setReservations(reservationsResponse.data);
+      } catch (error: any) {
+        setError(error.response?.data?.message || "Error al cargar disponibilidad o reservas");
+        console.error("Error al obtener disponibilidad o reservas:", error);
       }
     };
-    fetchAvailability();
+    fetchData();
   }, [productId, backendUrl]);
 
-  // Filtra fechas disponibles para el DatePicker
-  const includeDates = availabilities
-    .filter((a) => a.estado === "DISPONIBLE")
-    .map((a) => ({
-      start: new Date(a.fechaInicio),
-      end: new Date(a.fechaFin),
-    }));
+  // Función para parsear fechas de forma segura
+  const parseDate = (dateString: string | null | undefined): Date | null => {
+    if (!dateString || typeof dateString !== "string") {
+      console.warn(`Fecha inválida recibida: ${dateString}`);
+      return null;
+    }
+    const dateParts = dateString.split("T")[0]; // Tomamos solo la parte yyyy-MM-dd
+    const date = new Date(dateParts);
+    if (isNaN(date.getTime())) {
+      console.warn(`Fecha no válida: ${dateString}`);
+      return null;
+    }
+    // Establecer al inicio del día en la zona horaria local
+    date.setHours(0, 0, 0, 0);
+    console.log(`Fecha parseada: ${dateString} -> ${date.toLocaleDateString("es-AR")} (${date.toISOString()})`);
+    return date;
+  };
 
-  // Interfaz para las propiedades del input personalizado de DatePicker
+  // Normalizar fecha a local sin hora
+  const normalizeToLocalDate = (date: Date): Date => {
+    const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    localDate.setHours(0, 0, 0, 0); // Asegurar inicio del día
+    return localDate;
+  };
+
+  // Generar todas las fechas en un rango
+  const getDatesInRange = (start: Date, end: Date): Date[] => {
+    const dates: Date[] = [];
+    let currentDate = new Date(start);
+    currentDate.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    while (currentDate <= end) {
+      dates.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    return dates;
+  };
+
+  // Parsear fechas para incluir (disponibilidades)
+  const includeDates: { start: Date; end: Date }[] = availabilities
+    .filter((a) => a.estado === "DISPONIBLE" && a.fechaInicio && a.fechaFin)
+    .map((a) => {
+      const start = parseDate(a.fechaInicio);
+      const end = parseDate(a.fechaFin);
+      return { start, end };
+    })
+    .filter((interval): interval is { start: Date; end: Date } => interval.start !== null && interval.end !== null);
+
+  // Generar fechas individuales para excluir (reservas y prueba)
+  const excludeDates: Date[] = [
+    // Fechas de prueba
+    normalizeToLocalDate(new Date("2025-05-02")),
+    normalizeToLocalDate(new Date("2025-05-03")),
+    ...reservations
+      .filter((r) => {
+        const isValid = r.startDate && r.endDate;
+        if (!isValid) {
+          console.warn(`Reserva inválida descartada:`, r);
+        }
+        return isValid;
+      })
+      .flatMap((r) => {
+        const start = parseDate(r.startDate);
+        const end = parseDate(r.endDate);
+        if (!start || !end) return [];
+        const datesInRange = getDatesInRange(start, end);
+        console.log(
+          `Reserva procesada: ${r.startDate} a ${r.endDate} ->`,
+          datesInRange.map((d) => d.toLocaleDateString("es-AR")).join(", ")
+        );
+        return datesInRange;
+      })
+      .filter((date): date is Date => date !== null),
+  ];
+
+  // Depuración: Imprimir los intervalos procesados
+  useEffect(() => {
+    console.log("Intervalos incluidos (disponibles):", includeDates);
+    console.log(
+      "Fechas excluidas (reservadas):",
+      excludeDates.map((d) => `${d.toLocaleDateString("es-AR")} (${d.toISOString()})`)
+    );
+    console.log(
+      "excludeDates antes de renderizar DatePicker:",
+      excludeDates.map((d) => ({
+        local: d.toLocaleDateString("es-AR"),
+        iso: d.toISOString(),
+        raw: d,
+      }))
+    );
+  }, [availabilities, reservations]);
+
+  // Validar el rango seleccionado en el frontend
+  const isDateRangeValid = (start: Date | null, end: Date | null): boolean => {
+    if (!start || !end) return false;
+    const startTime = start.setHours(0, 0, 0, 0);
+    const endTime = end.setHours(0, 0, 0, 0);
+    for (const excluded of excludeDates) {
+      const excludedTime = excluded.getTime();
+      if (excludedTime >= startTime && excludedTime <= endTime) {
+        console.warn(`Rango inválido: incluye fecha reservada ${excluded.toLocaleDateString("es-AR")}`);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // Interfaz para el componente de entrada personalizado del DatePicker
   interface CustomInputProps {
     value?: string;
     onClick?: () => void;
     placeholder?: string;
   }
 
-  // Input personalizado para DatePicker
   const CustomInput = React.forwardRef<HTMLInputElement, CustomInputProps>(
     ({ value = "", onClick = () => {}, placeholder = "" }, ref) => (
       <div className="relative">
@@ -339,7 +434,7 @@ function ProductAvailability({ productId, backendUrl }: { productId: number; bac
           onClick={onClick}
           ref={ref}
           readOnly
-          className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-40 pl-10 p-3 shadow-sm hover:shadow-md transition-shadow"
+          className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-64 pl-10 p-3 shadow-sm hover:shadow-md transition-shadow"
           placeholder={placeholder}
         />
       </div>
@@ -348,64 +443,68 @@ function ProductAvailability({ productId, backendUrl }: { productId: number; bac
 
   CustomInput.displayName = "CustomInput";
 
-  // Maneja el clic en el botón de reservar
+  // Manejar la acción de reservar
   const handleReserve = () => {
     if (status === "unauthenticated") {
       router.push(`/login?callbackUrl=/products/${productId}/reserve`);
       return;
     }
-    if (startDate && endDate) {
-      router.push(`/products/${productId}/reserve?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
-    } else {
+    if (!startDate || !endDate) {
       alert("Por favor, selecciona un rango de fechas");
+      return;
     }
+    if (!isDateRangeValid(startDate, endDate)) {
+      alert("El rango seleccionado incluye fechas reservadas. Por favor, elige otro rango.");
+      return;
+    }
+    router.push(`/products/${productId}/reserve?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
   };
 
   return (
     <div className="mt-8">
       <h2 className="text-2xl font-semibold text-gray-900 mb-4">Disponibilidad</h2>
-      <div className="flex flex-col sm:flex-row gap-4 items-start">
-        <div className="flex gap-3">
-          {/* Selector de fecha de inicio */}
-          <DatePicker
-            selected={startDate}
-            onChange={(date: Date | null) => setStartDate(date)}
-            selectsStart
-            startDate={startDate}
-            endDate={endDate}
-            includeDateIntervals={includeDates}
-            customInput={<CustomInput />}
-            placeholderText="Fecha Inicio"
-            isClearable
-          />
-          {/* Selector de fecha de fin */}
-          <DatePicker
-            selected={endDate}
-            onChange={(date: Date | null) => setEndDate(date)}
-            selectsEnd
-            startDate={startDate}
-            endDate={endDate}
-            minDate={startDate ?? undefined}
-            includeDateIntervals={includeDates}
-            customInput={<CustomInput />}
-            placeholderText="Fecha Fin"
-            isClearable
-          />
+      {error ? (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <strong>Error:</strong> {error}
         </div>
-        {/* Botón para iniciar el proceso de reserva */}
-        <button
-          onClick={handleReserve}
-          className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 transition-colors"
-        >
-          Reservar
-        </button>
-      </div>
+      ) : (
+        <>
+          <div className="flex flex-col sm:flex-row gap-4 items-start">
+            <div className="flex gap-3">
+              <DatePicker
+                selectsRange
+                startDate={startDate}
+                endDate={endDate}
+                onChange={(update: [Date | null, Date | null]) => {
+                  setStartDate(update[0]);
+                  setEndDate(update[1]);
+                }}
+                // includeDateIntervals={includeDates} // Comentado para pruebas
+                excludeDates={excludeDates}
+                minDate={new Date()}
+                customInput={<CustomInput />}
+                placeholderText="Selecciona fechas"
+                isClearable
+                showPopperArrow={false}
+                monthsShown={2}
+                dateFormat="yyyy-MM-dd"
+              />
+            </div>
+            <button
+              onClick={handleReserve}
+              className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 transition-colors"
+            >
+              Reservar
+            </button>
+          </div>
+          <p className="text-gray-700 mt-2 text-sm">Las fechas en gris están reservadas.</p>
+        </>
+      )}
     </div>
   );
 }
 
 // Componente para mostrar las políticas del producto
-// @param politicas - Lista de políticas
 function ProductPolicies({ politicas }: { politicas: Politica[] }) {
   return (
     <div className="mt-8 w-full">
@@ -427,16 +526,12 @@ function ProductPolicies({ politicas }: { politicas: Politica[] }) {
 }
 
 // Componente para mostrar y gestionar valoraciones del producto
-// @param productId - ID del producto
-// @param usuarioId - ID del usuario (puede ser null si no está autenticado)
-// @param backendUrl - URL base del backend
 function ProductRatings({ productId, usuarioId, backendUrl }: { productId: number; usuarioId: number | null; backendUrl: string }) {
-  const [puntuaciones, setPuntuaciones] = useState<Puntuacion[]>([]); // Lista de valoraciones
-  const [canRate, setCanRate] = useState(false); // Indica si el usuario puede puntuar
-  const [userRating, setUserRating] = useState<number | null>(null); // Puntuación del usuario
-  const [hoverRating, setHoverRating] = useState<number | null>(null); // Puntuación al pasar el ratón
+  const [puntuaciones, setPuntuaciones] = useState<Puntuacion[]>([]);
+  const [canRate, setCanRate] = useState(false);
+  const [userRating, setUserRating] = useState<number | null>(null);
+  const [hoverRating, setHoverRating] = useState<number | null>(null);
 
-  // Carga las valoraciones del producto
   useEffect(() => {
     const fetchPuntuaciones = async () => {
       try {
@@ -449,7 +544,6 @@ function ProductRatings({ productId, usuarioId, backendUrl }: { productId: numbe
     fetchPuntuaciones();
   }, [productId, backendUrl]);
 
-  // Verifica si el usuario puede puntuar y obtiene su puntuación existente
   useEffect(() => {
     const checkCanRate = async () => {
       if (usuarioId) {
@@ -468,7 +562,6 @@ function ProductRatings({ productId, usuarioId, backendUrl }: { productId: numbe
     checkCanRate();
   }, [productId, usuarioId, backendUrl, puntuaciones]);
 
-  // Maneja el envío de una nueva puntuación
   const handleRating = async (estrellas: number) => {
     if (!usuarioId) {
       alert("Debes iniciar sesión para puntuar");
@@ -493,7 +586,6 @@ function ProductRatings({ productId, usuarioId, backendUrl }: { productId: numbe
     }
   };
 
-  // Calcula el promedio de valoraciones
   const averageRating = puntuaciones.length > 0
     ? (puntuaciones.reduce((sum, p) => sum + p.estrellas, 0) / puntuaciones.length).toFixed(1)
     : "0.0";
@@ -546,10 +638,6 @@ function ProductRatings({ productId, usuarioId, backendUrl }: { productId: numbe
 }
 
 // Componente para compartir el producto en redes sociales
-// @param isOpen - Indica si el modal está abierto
-// @param onClose - Función para cerrar el modal
-// @param productName - Nombre del producto
-// @param productId - ID del producto
 function ShareProduct({
   isOpen,
   onClose,
@@ -607,35 +695,30 @@ function ShareProduct({
 }
 
 // Componente principal para la página de detalles del producto
-// @param params - Parámetros dinámicos de la ruta, contiene el ID del producto
 export default function ProductDetailPage({ params }: ProductPageProps) {
-  const { data: session } = useSession(); // Obtiene la sesión del usuario
-  const [product, setProduct] = useState<Product | null>(null); // Estado para los datos del producto
-  const [politicas, setPoliticas] = useState<Politica[]>([]); // Estado para las políticas
-  const [loading, setLoading] = useState(true); // Estado para indicar carga
-  const [error, setError] = useState<string | null>(null); // Estado para errores
-  const [isShareOpen, setIsShareOpen] = useState(false); // Estado para el modal de compartir
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080"; // URL del backend
+  const { data: session } = useSession();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [politicas, setPoliticas] = useState<Politica[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
-  // Carga los datos del producto y las políticas al montar el componente
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const resolvedParams = await params; // Resuelve los parámetros dinámicos
+        const resolvedParams = await params;
         const id = resolvedParams.id;
 
-        // Valida que el ID sea un número
         if (!/^\d+$/.test(id)) {
           throw new Error("El ID del producto debe ser un número");
         }
 
-        // Obtiene los datos del producto
         const productResponse = await axios.get<Product>(`${backendUrl}/api/productos/${id}`, {
           headers: { "Content-Type": "application/json" },
         });
         setProduct(productResponse.data);
 
-        // Obtiene las políticas del producto
         const politicasResponse = await axios.get<Politica[]>(`${backendUrl}/api/productos/${id}/politicas`);
         setPoliticas(politicasResponse.data);
 
@@ -649,7 +732,6 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
     fetchData();
   }, [params]);
 
-  // Renderiza un mensaje de carga mientras se obtienen los datos
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -664,7 +746,6 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
     );
   }
 
-  // Renderiza un mensaje de error si falla la carga o no se encuentra el producto
   if (error || !product) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -679,14 +760,11 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
     );
   }
 
-  // Convierte el ID del usuario de string a number (si existe)
   const usuarioId = session?.user?.id ? parseInt(session.user.id, 10) : null;
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Encabezado con soporte para sesión */}
       <HeaderWithSession className="z-50" />
-      {/* Contenido principal */}
       <main className="flex-grow pt-36">
         <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8">
           <div className="bg-white shadow-lg rounded-lg overflow-hidden">
@@ -694,7 +772,6 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
               <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-gray-900 text-left">{product.nombre}</h1>
                 <div className="flex items-center space-x-4">
-                  {/* Botón para volver a la página principal */}
                   <Link
                     href="/"
                     className="text-gray-600 hover:text-gray-900 flex items-center"
@@ -702,7 +779,6 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
                     <ArrowLeftIcon className="h-6 w-6 mr-2" />
                     Volver
                   </Link>
-                  {/* Botón para abrir el modal de compartir */}
                   <button
                     onClick={() => setIsShareOpen(true)}
                     className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
@@ -723,16 +799,13 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
           </div>
         </div>
       </main>
-      {/* Pie de página */}
       <Footer />
-      {/* Modal para compartir el producto */}
       <ShareProduct
         isOpen={isShareOpen}
         onClose={() => setIsShareOpen(false)}
         productName={product.nombre}
         productId={product.id.toString()}
       />
-      {/* Botón flotante de WhatsApp */}
       <WhatsAppButton />
     </div>
   );

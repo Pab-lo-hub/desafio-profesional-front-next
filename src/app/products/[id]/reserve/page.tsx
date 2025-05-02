@@ -25,6 +25,12 @@ interface Availability {
   estado: string;
 }
 
+interface Reservation {
+  id: number;
+  fechaInicio: string;
+  fechaFin: string;
+}
+
 interface CustomInputProps {
   value?: string;
   onClick?: () => void;
@@ -36,7 +42,7 @@ const CustomInput = React.forwardRef<HTMLInputElement, CustomInputProps>(
     <div className="relative">
       <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
         <svg
-          className="w-4 h-4 text-gray-500"
+          className="w-4 h-4 text-gray-800"
           aria-hidden="true"
           xmlns="http://www.w3.org/2000/svg"
           fill="currentColor"
@@ -50,7 +56,7 @@ const CustomInput = React.forwardRef<HTMLInputElement, CustomInputProps>(
         onClick={onClick}
         ref={ref}
         readOnly
-        className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 p-3 shadow-sm hover:shadow-md transition-shadow"
+        className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 p-3 shadow-sm hover:shadow-md transition-shadow placeholder-gray-600"
         placeholder={placeholder}
       />
     </div>
@@ -69,9 +75,9 @@ export default function ReservePage() {
 
   const [product, setProduct] = useState<Product | null>(null);
   const [availabilities, setAvailabilities] = useState<Availability[]>([]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
   const [startDate, setStartDate] = useState<Date | null>(startDateParam ? new Date(startDateParam) : null);
   const [endDate, setEndDate] = useState<Date | null>(endDateParam ? new Date(endDateParam) : null);
-  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
@@ -82,20 +88,25 @@ export default function ReservePage() {
       return;
     }
 
-    const fetchProduct = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get<Product>(`${backendUrl}/api/productos/${productId}`);
-        setProduct(response.data);
+        const productResponse = await axios.get<Product>(`${backendUrl}/api/productos/${productId}`);
+        setProduct(productResponse.data);
+
         const availabilityResponse = await axios.get<Availability[]>(`${backendUrl}/api/productos/${productId}/availability`);
         setAvailabilities(availabilityResponse.data);
+
+        const reservationsResponse = await axios.get<Reservation[]>(`${backendUrl}/api/reservas/producto/${productId}`);
+        setReservations(reservationsResponse.data);
+
         setLoading(false);
       } catch (err: any) {
-        setError("No se pudo cargar el producto.");
+        setError(err.response?.data?.message || "No se pudo cargar el producto o las reservas.");
         setLoading(false);
       }
     };
 
-    fetchProduct();
+    fetchData();
   }, [productId, status, router]);
 
   const includeDates = availabilities
@@ -104,6 +115,11 @@ export default function ReservePage() {
       start: new Date(a.fechaInicio),
       end: new Date(a.fechaFin),
     }));
+
+  const excludeDates = reservations.map((r) => ({
+    start: new Date(r.fechaInicio),
+    end: new Date(r.fechaFin),
+  }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,11 +138,10 @@ export default function ReservePage() {
 
     try {
       const response = await axios.post(`${backendUrl}/api/reservas`, {
-        userId: session.user.id,
+        userId: Number(session.user.id),
         productId: Number(productId),
         startDate: startDate.toISOString().split("T")[0],
         endDate: endDate.toISOString().split("T")[0],
-        notes,
       });
       router.push(`/reservations/confirmation?reservationId=${response.data.id}`);
     } catch (err: any) {
@@ -135,21 +150,37 @@ export default function ReservePage() {
   };
 
   if (loading) {
-    return <div className="text-center py-16">Cargando...</div>;
+    return (
+      <div className="flex flex-col min-h-screen">
+        <HeaderWithSession className="z-50" />
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <div className="text-center py-16 text-gray-900">Cargando...</div>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   if (error || !product) {
-    return <div className="text-center py-16 text-red-500">{error || "Producto no encontrado."}</div>;
+    return (
+      <div className="flex flex-col min-h-screen">
+        <HeaderWithSession className="z-50" />
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <div className="text-center py-16 text-red-500">{error || "Producto no encontrado."}</div>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col min-h-screen">
       <HeaderWithSession className="z-50" />
       <main className="flex-grow container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">Reservar: {product.nombre}</h1>
+        <h1 className="text-3xl font-bold mb-6 text-gray-900">Reservar: {product.nombre}</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4">Detalles del Producto</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">Detalles del Producto</h2>
             <div className="relative h-64 mb-4">
               <Image
                 src={product.imagenes[0]?.ruta ? `${backendUrl}${product.imagenes[0].ruta}` : "/placeholder.png"}
@@ -159,55 +190,36 @@ export default function ReservePage() {
                 sizes="(max-width: 768px) 100vw, 50vw"
               />
             </div>
-            <p><strong>Nombre:</strong> {product.nombre}</p>
-            <p><strong>Descripción:</strong> {product.descripcion}</p>
+            <p className="text-gray-900"><strong>Nombre:</strong> {product.nombre}</p>
+            <p className="text-gray-900"><strong>Descripción:</strong> {product.descripcion}</p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4">Formulario de Reserva</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">Formulario de Reserva</h2>
             <div className="mb-4">
-              <h3 className="text-lg font-medium">Datos del Usuario</h3>
-              <p><strong>Nombre:</strong> {session?.user?.nombre || "No disponible"}</p>
-              <p><strong>Apellido:</strong> {session?.user?.apellido || "No disponible"}</p>
-              <p><strong>Correo:</strong> {session?.user?.email}</p>
+              <h3 className="text-lg font-medium text-gray-900">Datos del Usuario</h3>
+              <p className="text-gray-900"><strong>Nombre:</strong> {session?.user?.nombre || "No disponible"}</p>
+              <p className="text-gray-900"><strong>Apellido:</strong> {session?.user?.apellido || "No disponible"}</p>
+              <p className="text-gray-900"><strong>Correo:</strong> {session?.user?.email}</p>
             </div>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium mb-2">Selecciona las Fechas</h3>
-                <div className="flex gap-4">
-                  <DatePicker
-                    selected={startDate}
-                    onChange={(date: Date | null) => setStartDate(date)}
-                    selectsStart
-                    startDate={startDate}
-                    endDate={endDate}
-                    includeDateIntervals={includeDates}
-                    customInput={<CustomInput placeholder="Fecha Inicio" />}
-                    minDate={new Date()}
-                    isClearable
-                  />
-                  <DatePicker
-                    selected={endDate}
-                    onChange={(date: Date | null) => setEndDate(date)}
-                    selectsEnd
-                    startDate={startDate}
-                    endDate={endDate}
-                    minDate={startDate ?? new Date()}
-                    includeDateIntervals={includeDates}
-                    customInput={<CustomInput placeholder="Fecha Fin" />}
-                    isClearable
-                  />
-                </div>
-              </div>
-              <div>
-                <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
-                  Notas (opcional)
-                </label>
-                <textarea
-                  id="notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  rows={4}
+                <h3 className="text-lg font-medium mb-2 text-gray-900">Selecciona las Fechas</h3>
+                <DatePicker
+                  selectsRange
+                  startDate={startDate}
+                  endDate={endDate}
+                  onChange={(update: [Date | null, Date | null]) => {
+                    setStartDate(update[0]);
+                    setEndDate(update[1]);
+                  }}
+                  includeDateIntervals={includeDates}
+                  excludeDateIntervals={excludeDates}
+                  customInput={<CustomInput placeholder="Selecciona fechas" />}
+                  minDate={new Date()}
+                  isClearable
+                  showPopperArrow={false}
+                  monthsShown={2}
+                  dateFormat="yyyy-MM-dd"
                 />
               </div>
               {error && <div className="text-red-500">{error}</div>}

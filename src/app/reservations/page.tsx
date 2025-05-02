@@ -9,13 +9,15 @@ import axios from "axios"; // Cliente HTTP para solicitudes al backend
 import HeaderWithSession from "@/app/Components/HeaderWithSession"; // Componente de encabezado con soporte para sesión
 import Footer from "@/app/Components/Footer"; // Componente de pie de página
 
-// Interfaz para la reserva (compatible con el backend)
+// Interfaz para la reserva (compatible con ReservaDTO del backend)
 interface Reservation {
   id: number;
-  producto: { id: number; nombre: string };
-  usuario: { id: number; nombre: string };
-  fechaInicio: string;
-  fechaFin: string;
+  productId: number;
+  productoNombre: string;
+  userId: number;
+  usuarioNombre: string;
+  startDate: string;
+  endDate: string;
   estado: string;
 }
 
@@ -45,7 +47,11 @@ export default function ReservationsPage() {
     // Función para obtener las reservas del usuario
     const fetchReservations = async () => {
       // Solo ejecuta si hay un ID de usuario
-      if (!session?.user?.id) return;
+      if (!session?.user?.id) {
+        setError("ID de usuario no disponible");
+        setLoading(false);
+        return;
+      }
 
       try {
         // Realiza la solicitud al backend para obtener las reservas
@@ -93,7 +99,7 @@ export default function ReservationsPage() {
               <h1 className="text-3xl font-bold text-gray-900 mb-6">Mis Reservas</h1>
               {/* Muestra un mensaje de carga si está cargando */}
               {loading ? (
-                <div className="text-center text-gray-600">Cargando reservas...</div>
+                <div className="text-center text-gray-900">Cargando reservas...</div>
               ) : // Muestra un mensaje de error si ocurrió un error
               error ? (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
@@ -101,7 +107,7 @@ export default function ReservationsPage() {
                 </div>
               ) : // Muestra un mensaje si no hay reservas
               reservations.length === 0 ? (
-                <div className="text-center text-gray-600">No tienes reservas actualmente.</div>
+                <div className="text-center text-gray-900">No tienes reservas actualmente.</div>
               ) : (
                 // Muestra una cuadrícula de reservas
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -109,23 +115,27 @@ export default function ReservationsPage() {
                     // Tarjeta para cada reserva
                     <div key={reservation.id} className="bg-gray-50 p-6 rounded-lg shadow-sm">
                       {/* Nombre del producto */}
-                      <h2 className="text-xl font-semibold text-gray-800">{reservation.producto.nombre}</h2>
+                      <h2 className="text-xl font-semibold text-gray-900">
+                        {reservation.productoNombre || "Producto no disponible"}
+                      </h2>
                       {/* ID de la reserva */}
-                      <p className="text-gray-600">Reserva ID: {reservation.id}</p>
+                      <p className="text-gray-900">Reserva ID: {reservation.id}</p>
                       {/* Nombre del usuario */}
-                      <p className="text-gray-600">Usuario: {reservation.usuario.nombre}</p>
+                      <p className="text-gray-900">
+                        Usuario: {reservation.usuarioNombre || "Usuario no disponible"}
+                      </p>
                       {/* Fecha de inicio formateada */}
-                      <p className="text-gray-600">
-                        Fecha Inicio: {new Date(reservation.fechaInicio).toLocaleDateString()}
+                      <p className="text-gray-900">
+                        Fecha Inicio: {new Date(reservation.startDate).toLocaleDateString()}
                       </p>
                       {/* Fecha de fin formateada */}
-                      <p className="text-gray-600">
-                        Fecha Fin: {new Date(reservation.fechaFin).toLocaleDateString()}
+                      <p className="text-gray-900">
+                        Fecha Fin: {new Date(reservation.endDate).toLocaleDateString()}
                       </p>
                       {/* Estado de la reserva */}
-                      <p className="text-gray-600">Estado: {reservation.estado}</p>
+                      {/* <p className="text-gray-900">Estado: {reservation.estado}</p> */}
                       {/* Botón para ver el producto */}
-                      <Link href={`/products/${reservation.producto.id}`}>
+                      <Link href={`/products/${reservation.productId}`}>
                         <button className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
                           Ver Producto
                         </button>
