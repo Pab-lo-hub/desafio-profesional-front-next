@@ -27,16 +27,17 @@ interface ProductsProps {
 const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
   // Obtiene la sesión del usuario
   const { data: session, status } = useSession();
-  // Estados para productos, favoritos, carrusel, carga y errores
+  // Estados para productos, favoritos, carrusel, carga, errores y paginación
   const [products, setProducts] = useState<Product[]>([]);
   const [randomProducts, setRandomProducts] = useState<Product[]>([]);
   const [favorites, setFavorites] = useState<number[]>([]); // IDs de productos favoritos
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentSlides, setCurrentSlides] = useState<{ [key: number]: number }>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 10; // Máximo de productos por página
   // URL del backend desde variables de entorno
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
-  const productsToShow = 10; // Número de productos a mostrar
   // Imagen de respaldo para errores
   const fallbackImage = "https://tailwindui.com/plus-assets/img/ecommerce-images/category-page-04-image-card-01.jpg";
 
@@ -52,7 +53,7 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
         // Si se proporcionan favoriteProducts, usarlos directamente
         if (favoriteProducts && favoriteProducts.length > 0) {
           setProducts(favoriteProducts);
-          setRandomProducts(getRandomUniqueProducts(favoriteProducts, productsToShow));
+          setRandomProducts(getRandomUniqueProducts(favoriteProducts));
           setLoading(false);
           return;
         }
@@ -70,7 +71,7 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
         console.log("Respuesta del backend:", response.data);
         const data = Array.isArray(response.data) ? response.data : [];
         setProducts(data);
-        setRandomProducts(getRandomUniqueProducts(data, productsToShow));
+        setRandomProducts(getRandomUniqueProducts(data));
         setLoading(false);
       } catch (err: any) {
         setError(err.message || "No se pudieron cargar los productos");
@@ -97,21 +98,32 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
   }, [categoryId, status, session, favoriteProducts, backendUrl]);
 
   // Función para obtener productos aleatorios únicos
-  const getRandomUniqueProducts = (allProducts: Product[], count: number): Product[] => {
-    if (allProducts.length <= count) return allProducts;
+  const getRandomUniqueProducts = (allProducts: Product[]): Product[] => {
+    if (allProducts.length === 0) return [];
 
-    const result: Product[] = [];
-    const usedIndices = new Set<number>();
+    const shuffled = [...allProducts].sort(() => Math.random() - 0.5);
+    return shuffled;
+  };
 
-    while (result.length < count && usedIndices.size < allProducts.length) {
-      const randomIndex = Math.floor(Math.random() * allProducts.length);
-      if (!usedIndices.has(randomIndex)) {
-        usedIndices.add(randomIndex);
-        result.push(allProducts[randomIndex]);
-      }
+  // Calcular el número total de páginas
+  const totalPages = Math.ceil(randomProducts.length / productsPerPage);
+
+  // Obtener los productos para la página actual
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = randomProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+
+  // Funciones para la navegación de páginas
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage((prev) => prev - 1);
     }
+  };
 
-    return result;
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+    }
   };
 
   // Funciones para el carrusel de imágenes
@@ -204,101 +216,135 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
         <h2 className="text-3xl font-bold text-gray-900 mb-6">Productos</h2>
         {/* Cuadrícula de productos */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-10">
-          {randomProducts.map((product) => {
-            const currentSlide = currentSlides[product.id] || 0;
-            const totalImages = product.imagenes?.length || 0;
-            const imageUrl =
-              product.imagenes && product.imagenes.length > 0 && product.imagenes[currentSlide]?.ruta
-                ? product.imagenes[currentSlide].ruta.startsWith("http")
-                  ? product.imagenes[currentSlide].ruta
-                  : `${backendUrl}${product.imagenes[currentSlide].ruta}`
-                : fallbackImage;
+          {currentProducts.length > 0 ? (
+            currentProducts.map((product) => {
+              const currentSlide = currentSlides[product.id] || 0;
+              const totalImages = product.imagenes?.length || 0;
+              const imageUrl =
+                product.imagenes && product.imagenes.length > 0 && product.imagenes[currentSlide]?.ruta
+                  ? product.imagenes[currentSlide].ruta.startsWith("http")
+                    ? product.imagenes[currentSlide].ruta
+                    : `${backendUrl}${product.imagenes[currentSlide].ruta}`
+                  : fallbackImage;
 
-            return (
-              <div key={product.id} className="group relative">
-                <Link href={`/products/${product.id}`} className="block">
-                  {/* Contenedor de imagen */}
-                  <div className="relative aspect-square w-full rounded-lg bg-gray-200 overflow-hidden">
-                    <Image
-                      src={imageUrl}
-                      alt={product.descripcion || "Producto sin descripción"}
-                      fill
-                      className="object-cover group-hover:opacity-75"
-                      sizes="(max-width: 640px) 100vw, 50vw"
-                      priority
-                      onError={(e) => {
-                        console.log(`No se pudo cargar la imagen: ${imageUrl}`);
-                        e.currentTarget.src = fallbackImage;
-                      }}
-                    />
-                    {/* Controles del carrusel */}
-                    {totalImages > 1 && (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            prevSlide(product.id, totalImages);
-                          }}
-                          className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-gray-800 bg-opacity-50 text-white p-1 rounded-full hover:bg-opacity-75 focus:outline-none"
-                        >
-                          ❮
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            nextSlide(product.id, totalImages);
-                          }}
-                          className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-gray-800 bg-opacity-50 text-white p-1 rounded-full hover:bg-opacity-75 focus:outline-none"
-                        >
-                          ❯
-                        </button>
-                        <div className="absolute bottom-2 left-0 right-0 flex justify-center space-x-1">
-                          {product.imagenes.map((_, index) => (
-                            <button
-                              key={index}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                goToSlide(product.id, index);
-                              }}
-                              className={`w-2 h-2 rounded-full ${
-                                index === currentSlide ? "bg-indigo-600" : "bg-gray-300"
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  {/* Descripción del producto */}
-                  <h3 className="mt-4 text-lg font-semibold text-gray-800">{product.descripcion}</h3>
-                  {/* Nombre del producto */}
-                  <p className="mt-1 text-xl font-medium text-gray-900">{product.nombre || "Nombre no disponible"}</p>
-                </Link>
-                {/* Botón de favorito */}
-                <button
-                  onClick={(e) => toggleFavorite(product.id, e)}
-                  className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100"
-                  aria-label={favorites.includes(product.id) ? "Quitar de favoritos" : "Agregar a favoritos"}
-                >
-                  <svg
-                    className={`w-6 h-6 ${favorites.includes(product.id) ? "text-red-500" : "text-gray-400"}`}
-                    fill={favorites.includes(product.id) ? "currentColor" : "none"}
-                    stroke="currentColor"
-                    viewBox="0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
+              return (
+                <div key={product.id} className="group relative">
+                  <Link href={`/products/${product.id}`} className="block">
+                    {/* Contenedor de imagen */}
+                    <div className="relative aspect-square w-full rounded-lg bg-gray-200 overflow-hidden">
+                      <Image
+                        src={imageUrl}
+                        alt={product.descripcion || "Producto sin descripción"}
+                        fill
+                        className="object-cover group-hover:opacity-75"
+                        sizes="(max-width: 640px) 100vw, 50vw"
+                        priority
+                        onError={(e) => {
+                          console.log(`No se pudo cargar la imagen: ${imageUrl}`);
+                          e.currentTarget.src = fallbackImage;
+                        }}
+                      />
+                      {/* Controles del carrusel */}
+                      {totalImages > 1 && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              prevSlide(product.id, totalImages);
+                            }}
+                            className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-gray-800 bg-opacity-50 text-white p-1 rounded-full hover:bg-opacity-75 focus:outline-none"
+                          >
+                            ❮
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              nextSlide(product.id, totalImages);
+                            }}
+                            className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-gray-800 bg-opacity-50 text-white p-1 rounded-full hover:bg-opacity-75 focus:outline-none"
+                          >
+                            ❯
+                          </button>
+                          <div className="absolute bottom-2 left-0 right-0 flex justify-center space-x-1">
+                            {product.imagenes.map((_, index) => (
+                              <button
+                                key={index}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  goToSlide(product.id, index);
+                                }}
+                                className={`w-2 h-2 rounded-full ${
+                                  index === currentSlide ? "bg-indigo-600" : "bg-gray-300"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    {/* Descripción del producto */}
+                    <h3 className="mt-4 text-lg font-semibold text-gray-800">{product.descripcion}</h3>
+                    {/* Nombre del producto */}
+                    <p className="mt-1 text-xl font-medium text-gray-900">{product.nombre || "Nombre no disponible"}</p>
+                  </Link>
+                  {/* Botón de favorito */}
+                  <button
+                    onClick={(e) => toggleFavorite(product.id, e)}
+                    className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100"
+                    aria-label={favorites.includes(product.id) ? "Quitar de favoritos" : "Agregar a favoritos"}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    />
-                  </svg>
-                </button>
-              </div>
-            );
-          })}
+                    <svg
+                      className={`w-6 h-6 ${favorites.includes(product.id) ? "text-red-500" : "text-gray-400"}`}
+                      fill={favorites.includes(product.id) ? "currentColor" : "none"}
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              );
+            })
+          ) : (
+            <p className="text-gray-700 col-span-2">No hay productos disponibles en esta página.</p>
+          )}
         </div>
+        {/* Controles de paginación */}
+        {randomProducts.length > 0 && (
+          <div className="mt-8 flex items-center justify-center space-x-4">
+            <button
+              onClick={goToPreviousPage}
+              disabled={currentPage === 1}
+              className={`px-4 py-2 rounded-lg font-medium ${
+                currentPage === 1
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-indigo-600 text-white hover:bg-indigo-700"
+              }`}
+            >
+              Anterior
+            </button>
+            <span className="text-gray-700">
+              Página {currentPage} de {totalPages}
+            </span>
+            <button
+              onClick={goToNextPage}
+              disabled={currentPage === totalPages}
+              className={`px-4 py-2 rounded-lg font-medium ${
+                currentPage === totalPages
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-indigo-600 text-white hover:bg-indigo-700"
+              }`}
+            >
+              Siguiente
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
