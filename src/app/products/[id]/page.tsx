@@ -21,7 +21,12 @@ import {
   FaTelegramPlane,
   FaFacebook,
   FaStar,
-} from "react-icons/fa"; // Íconos de react-icons para características y compartir
+  FaArrowLeft,
+  FaArrowRight,
+  FaBluetooth,
+  FaBatteryFull,
+  FaQuestion,
+} from "react-icons/fa"; // Íconos de react-icons para características, compartir y navegación
 import { IconType } from "react-icons"; // Tipo para íconos
 import HeaderWithSession from "@/app/Components/HeaderWithSession"; // Componente de encabezado con soporte para sesión
 import Footer from "@/app/Components/Footer"; // Componente de pie de página
@@ -73,7 +78,7 @@ interface ProductPageProps {
   params: Promise<{ id: string }>;
 }
 
-// Lista de íconos disponibles para las características (definida en el ámbito global)
+// Lista de íconos disponibles para las características
 const availableIcons: { name: string; icon: IconType }[] = [
   { name: "FaWifi", icon: FaWifi },
   { name: "FaTv", icon: FaTv },
@@ -81,10 +86,12 @@ const availableIcons: { name: string; icon: IconType }[] = [
   { name: "FaSwimmingPool", icon: FaSwimmingPool },
   { name: "FaPaw", icon: FaPaw },
   { name: "FaSnowflake", icon: FaSnowflake },
+  { name: "Bluetooth", icon: FaBluetooth },
+  { name: "Battery", icon: FaBatteryFull },
 ];
 
 // Componente para mostrar la galería de imágenes del producto
-// @param imagenes - Lista de imágenes del producto
+// @param imagenes - Lista de imágenes del producto (0 a 6)
 // @param backendUrl - URL base del backend para cargar imágenes
 function ProductImageGallery({
   imagenes,
@@ -95,95 +102,143 @@ function ProductImageGallery({
 }) {
   // Estado para controlar la apertura del modal de imágenes
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // Estado para la imagen actual en el modal
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Abre el modal
-  const openModal = () => setIsModalOpen(true);
+  // Abre el modal en la primera imagen
+  const openModal = () => {
+    setCurrentImageIndex(0);
+    setIsModalOpen(true);
+  };
   // Cierra el modal
   const closeModal = () => setIsModalOpen(false);
 
-  // Limita las imágenes mostradas a 5
+  // Navega a la imagen anterior
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev === 0 ? imagenes.length - 1 : prev - 1));
+  };
+
+  // Navega a la imagen siguiente
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev === imagenes.length - 1 ? 0 : prev + 1));
+  };
+
+  // Limita las imágenes mostradas a 5 para el bloque principal
   const displayImages = imagenes.slice(0, 5);
-  // Imagen principal (primera de la lista o placeholder)
-  const mainImage = displayImages[0] || { id: 0, ruta: "/placeholder.png" };
-  // Imágenes secundarias para la cuadrícula
+  // Imagen principal (primera imagen o null si no hay imágenes)
+  const mainImage = displayImages[0] || null;
+  // Imágenes secundarias (hasta 4 imágenes)
   const gridImages = displayImages.slice(1, 5);
+
+  // Determina la configuración de la grilla secundaria según la cantidad de imágenes secundarias
+  const gridConfig = gridImages.length > 0 ? (
+    gridImages.length === 1 ? "grid-cols-1 grid-rows-1" :
+    gridImages.length === 2 ? "grid-cols-1 sm:grid-cols-2 grid-rows-2 sm:grid-rows-1" :
+    gridImages.length === 3 ? "grid-cols-2 grid-rows-2" :
+    "grid-cols-2 grid-rows-2"
+  ) : "";
 
   return (
     <>
-      {/* Contenedor de la galería */}
-      <div className="w-full">
-        <div className="md:grid md:grid-cols-2 md:gap-4 flex flex-col gap-4">
-          {/* Imagen principal */}
-          <div className="relative h-96">
-            <Image
-              src={`${backendUrl}${mainImage.ruta}`}
-              alt="Imagen principal del producto"
-              fill
-              className="object-cover rounded-lg"
-              sizes="(max-width: 768px) 100vw, 50vw"
-            />
-          </div>
-          {/* Cuadrícula de imágenes secundarias */}
-          <div className="grid grid-cols-2 grid-rows-2 gap-4 relative">
-            {gridImages.map((img, index) => (
-              <div key={img.id} className="relative h-44">
-                <Image
-                  src={`${backendUrl}${img.ruta}`}
-                  alt={`Imagen secundaria ${index + 1}`}
-                  fill
-                  className="object-cover rounded-lg"
-                  sizes="(max-width: 768px) 50vw, 25vw"
-                />
-              </div>
-            ))}
-            {/* Placeholders para completar la cuadrícula si hay menos de 4 imágenes */}
-            {gridImages.length < 4 &&
-              Array.from({ length: 4 - gridImages.length }).map((_, index) => (
-                <div key={`placeholder-${index}`} className="relative h-44">
+      {/* Contenedor de la galería, ocupa el 100% del ancho */}
+      <div className="w-full mt-6">
+        {displayImages.length === 0 ? (
+          <p className="text-gray-500 text-center">No hay imágenes disponibles</p>
+        ) : (
+          <div className="relative">
+            {/* Cuadrícula principal: 2 columnas en escritorio, 1 en móvil */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Imagen principal (mitad izquierda en escritorio, completa en móvil) */}
+              <div className="relative h-96">
+                {mainImage ? (
                   <Image
-                    src="/placeholder.png"
-                    alt="Placeholder"
+                    src={`${backendUrl}${mainImage.ruta}`}
+                    alt="Imagen principal"
                     fill
-                    className="object-cover rounded-lg opacity-50"
-                    sizes="(max-width: 768px) 50vw, 25vw"
+                    className="object-cover rounded-lg shadow-sm"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    onError={() => console.error(`Error cargando imagen: ${mainImage.ruta}`)}
                   />
+                ) : (
+                  <div className="h-full rounded-lg flex items-center justify-center bg-gray-100">
+                    <p className="text-gray-500">Sin imagen principal</p>
+                  </div>
+                )}
+              </div>
+              {/* Grilla secundaria (mitad derecha en escritorio, debajo en móvil) */}
+              {gridImages.length > 0 && (
+                <div className={`grid ${gridConfig} gap-4`}>
+                  {gridImages.map((img, index) => (
+                    <div key={img.id} className="relative h-44">
+                      <Image
+                        src={`${backendUrl}${img.ruta}`}
+                        alt={`Imagen secundaria ${index + 1}`}
+                        fill
+                        className="object-cover rounded-lg shadow-sm"
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                        onError={() => console.error(`Error cargando imagen: ${img.ruta}`)}
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            {/* Botón para ver más imágenes si hay más de 5 */}
-            {imagenes.length > 5 && (
+              )}
+            </div>
+            {/* Botón "Ver más" en la región inferior derecha */}
+            <div className="absolute bottom-4 right-4">
               <button
                 onClick={openModal}
-                className="absolute bottom-2 right-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 focus:outline-none"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 Ver más
               </button>
-            )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Modal para mostrar todas las imágenes */}
+      {/* Modal para mostrar imágenes en tamaño grande */}
       <Dialog open={isModalOpen} onClose={closeModal} className="relative z-50">
-        <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
+        <div className="fixed inset-0 bg-black/70" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-3xl w-full bg-white rounded-lg p-6 max-h-[80vh] overflow-y-auto">
-            <h2 className="text-xl font-semibold mb-4">Todas las imágenes</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {imagenes.map((img) => (
-                <div key={img.id} className="relative h-64">
+          <DialogPanel className="max-w-5xl w-full bg-white rounded-lg p-6 max-h-[90vh] flex flex-col">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Vista de Imagen</h2>
+            {imagenes.length > 0 ? (
+              <div className="relative flex-grow flex items-center justify-center">
+                {/* Imagen actual en tamaño grande */}
+                <div className="relative w-full h-[60vh] max-h-[600px]">
                   <Image
-                    src={`${backendUrl}${img.ruta}`}
-                    alt={`Imagen ${img.id}`}
+                    src={`${backendUrl}${imagenes[currentImageIndex].ruta}`}
+                    alt={`Imagen ${currentImageIndex + 1}`}
                     fill
-                    className="object-cover rounded-lg"
-                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="object-contain rounded-lg"
+                    sizes="(max-width: 768px) 100vw, 80vw"
+                    onError={() => console.error(`Error cargando imagen: ${imagenes[currentImageIndex].ruta}`)}
                   />
                 </div>
-              ))}
-            </div>
+                {/* Botones de navegación */}
+                {imagenes.length > 1 && (
+                  <>
+                    <button
+                      onClick={prevImage}
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white p-2 rounded-full hover:bg-gray-900 focus:outline-none"
+                    >
+                      <FaArrowLeft className="h-6 w-6" />
+                    </button>
+                    <button
+                      onClick={nextImage}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white p-2 rounded-full hover:bg-gray-900 focus:outline-none"
+                    >
+                      <FaArrowRight className="h-6 w-6" />
+                    </button>
+                  </>
+                )}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center">No hay imágenes disponibles</p>
+            )}
             <button
               onClick={closeModal}
-              className="mt-4 w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 focus:outline-none"
+              className="mt-4 w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
             >
               Cerrar
             </button>
@@ -200,9 +255,8 @@ function ProductFeatures({ features }: { features: Feature[] }) {
   // Renderiza el ícono correspondiente a cada característica
   const renderIcon = (icono: string) => {
     const iconObj = availableIcons.find((i) => i.name === icono);
-    if (!iconObj) return <span className="text-gray-700">Icono no encontrado</span>;
-    const IconComponent = iconObj.icon;
-    return <IconComponent className="text-indigo-600 h-6 w-6" />;
+    const IconComponent = iconObj ? iconObj.icon : FaQuestion;
+    return <IconComponent className="text-indigo-600 h-6 w-6" title={icono} />;
   };
 
   return (

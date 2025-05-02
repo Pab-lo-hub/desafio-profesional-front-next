@@ -144,9 +144,9 @@ export default function LoginForm() {
         )}
       </Button>
 
-      <a href="/forgot-password" className="text-cyan-400 text-sm hover:underline">
+      {/* <a href="/forgot-password" className="text-cyan-400 text-sm hover:underline">
         Forgot Password?
-      </a>
+      </a> */}
     </form>
   );
 }

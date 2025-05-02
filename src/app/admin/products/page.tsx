@@ -153,12 +153,6 @@ export default function ProductList() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Gestionar Productos</h1>
         <div className="flex space-x-4">
-          <Link
-            href="/admin/products/add"
-            className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-          >
-            Agregar Producto
-          </Link>
           <Link href="/admin" className="text-gray-600 hover:text-gray-900 flex items-center">
             <svg
               className="h-6 w-6 mr-2"
@@ -169,7 +163,13 @@ export default function ProductList() {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Volver
+            Volver a Panel
+          </Link>
+          <Link
+            href="/admin/products/add"
+            className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+          >
+            Agregar Producto
           </Link>
         </div>
       </div>
