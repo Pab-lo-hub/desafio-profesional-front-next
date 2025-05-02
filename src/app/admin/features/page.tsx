@@ -7,16 +7,33 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Swal from "sweetalert2";
-import { FaWifi, FaBluetooth, FaBatteryFull, FaCamera, FaMicrochip } from "react-icons/fa";
+import {
+  FaWifi,
+  FaTv,
+  FaCar,
+  FaSwimmingPool,
+  FaPaw,
+  FaSnowflake,
+  FaBluetooth,
+  FaBatteryFull,
+  FaParking,
+  FaQuestion,
+} from "react-icons/fa";
+import { TbAirConditioning } from "react-icons/tb";
 import { IconType } from "react-icons";
 
 // Lista de iconos disponibles desde react-icons
 const availableIcons: { name: string; icon: IconType }[] = [
   { name: "FaWifi", icon: FaWifi },
+  { name: "FaTv", icon: FaTv },
+  { name: "FaCar", icon: FaCar },
+  { name: "FaSwimmingPool", icon: FaSwimmingPool },
+  { name: "FaPaw", icon: FaPaw },
+  { name: "FaSnowflake", icon: FaSnowflake },
   { name: "FaBluetooth", icon: FaBluetooth },
   { name: "FaBatteryFull", icon: FaBatteryFull },
-  { name: "FaCamera", icon: FaCamera },
-  { name: "FaMicrochip", icon: FaMicrochip },
+  { name: "FaParking", icon: FaParking },
+  { name: "TbAirConditioning", icon: TbAirConditioning },
 ];
 
 interface Feature {
@@ -178,17 +195,18 @@ export default function FeatureListPage() {
   // Función para renderizar el icono dinámicamente
   const renderIcon = (icono: string) => {
     const iconObj = availableIcons.find((i) => i.name === icono);
-    if (!iconObj) return <span>Icono no encontrado</span>;
-    const IconComponent = iconObj.icon;
-    return <IconComponent className="text-xl" />;
+    const IconComponent = iconObj ? iconObj.icon : FaQuestion;
+    return <IconComponent className="text-indigo-600 h-6 w-6" title={icono} />;
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen p-8">
-        <div className="mx-auto max-w-7xl">
-          <h1 className="text-3xl font-bold mb-4">Lista de Características</h1>
-          <p>Cargando...</p>
+      <div className="min-h-screen bg-gradient-to-r from-indigo-50 to-blue-50 pt-16">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">Lista de Características</h1>
+          <div className="bg-white shadow-lg rounded-lg p-6 text-center">
+            <p className="text-gray-900">Cargando...</p>
+          </div>
         </div>
       </div>
     );
@@ -196,42 +214,44 @@ export default function FeatureListPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen p-8">
-        <div className="mx-auto max-w-7xl">
-          <h1 className="text-3xl font-bold mb-4">Lista de Características</h1>
-          <p className="text-red-500">{error}</p>
+      <div className="min-h-screen bg-gradient-to-r from-indigo-50 to-blue-50 pt-16">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">Lista de Características</h1>
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+            <p>{error}</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="mx-auto max-w-7xl">
+    <div className="min-h-screen bg-gradient-to-r from-indigo-50 to-blue-50 pt-16">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Lista de Características</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Lista de Características</h1>
           <Link
             href="/admin"
-            className="text-gray-600 hover:text-gray-900 flex items-center"
+            className="text-gray-600 hover:text-gray-900 flex items-center transition-colors"
           >
             <ArrowLeftIcon className="h-6 w-6 mr-2" />
             Volver al Panel
           </Link>
         </div>
         <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Añadir Nueva Característica</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Añadir Nueva Característica</h2>
           <div className="flex flex-col gap-4">
             <input
               type="text"
-              placeholder="Nombre"
+              placeholder="Nombre de la característica"
               value={newFeature.nombre}
               onChange={(e) => setNewFeature({ ...newFeature, nombre: e.target.value })}
-              className="border rounded-lg p-2"
+              className="border border-gray-300 rounded-lg p-3 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 hover:shadow-md transition-shadow placeholder:text-gray-400"
             />
             <select
               value={newFeature.icono}
               onChange={(e) => setNewFeature({ ...newFeature, icono: e.target.value })}
-              className="border rounded-lg p-2"
+              className="border border-gray-300 rounded-lg p-3 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 hover:shadow-md transition-shadow text-gray-900"
             >
               <option value="">Selecciona un ícono</option>
               {availableIcons.map((icon) => (
@@ -242,7 +262,7 @@ export default function FeatureListPage() {
             </select>
             <button
               onClick={handleAddFeature}
-              className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+              className="bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 transition-colors"
             >
               Añadir Característica
             </button>
@@ -291,20 +311,20 @@ export default function FeatureListPage() {
           </div>
         </div>
         {editingFeature && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full">
-              <h2 className="text-xl font-semibold mb-4">Editar Característica</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Editar Característica</h2>
               <input
                 type="text"
-                placeholder="Nombre"
+                placeholder="Nombre de la característica"
                 value={editingFeature.nombre}
                 onChange={(e) => setEditingFeature({ ...editingFeature, nombre: e.target.value })}
-                className="border rounded-lg p-2 w-full mb-4"
+                className="border border-gray-300 rounded-lg p-3 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 hover:shadow-md transition-shadow placeholder:text-gray-400 w-full mb-4"
               />
               <select
                 value={editingFeature.icono}
                 onChange={(e) => setEditingFeature({ ...editingFeature, icono: e.target.value })}
-                className="border rounded-lg p-2 w-full mb-4"
+                className="border border-gray-300 rounded-lg p-3 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 hover:shadow-md transition-shadow text-gray-900 w-full mb-4"
               >
                 <option value="">Selecciona un ícono</option>
                 {availableIcons.map((icon) => (
@@ -313,16 +333,16 @@ export default function FeatureListPage() {
                   </option>
                 ))}
               </select>
-              <div className="flex gap-4">
+              <div className="flex justify-end gap-4">
                 <button
                   onClick={handleEditFeature}
-                  className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                  className="bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 transition-colors"
                 >
                   Guardar
                 </button>
                 <button
                   onClick={() => setEditingFeature(null)}
-                  className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
+                  className="bg-gray-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-700 focus:ring-4 focus:ring-gray-200 transition-colors"
                 >
                   Cancelar
                 </button>

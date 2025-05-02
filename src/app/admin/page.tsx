@@ -15,53 +15,57 @@ export default async function AdminPanel() {
   }
 
   return (
-    <div className="min-h-screen p-8 text-black">
-      <h1 className="text-3xl font-bold mb-4">Panel de Administración</h1>
-      <p>Bienvenido, {session.user.email}</p>
-      <p>Rol: {session.user.role}</p>
-      <div className="flex flex-row flex-wrap gap-4">
-        {/* Tarjeta para Agregar Producto */}
-        <div className="max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-          <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Agregar Producto</h5>
-          <p className="mb-3 font-normal text-gray-700 dark:text-gray-400">Crea un nuevo producto en el sistema.</p>
-          <Link href="/admin/products/add">
-            <button className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:ring-4 focus:outline-none focus:ring-blue-300">
-              Agregar Producto
-            </button>
-          </Link>
+    <div className="min-h-screen bg-gradient-to-r from-indigo-50 to-blue-50 pt-16">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">Panel de Administración</h1>
+        <p className="text-lg font-medium text-gray-900 mb-2">Bienvenido, {session.user.email}</p>
+        <p className="text-sm text-gray-500 mb-6">Rol: {session.user.role}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Tarjeta para Agregar Producto */}
+          <div className="w-full sm:w-80 bg-white shadow-lg rounded-lg p-6">
+            <h5 className="text-2xl font-bold tracking-tight text-gray-900 mb-2">Agregar Producto</h5>
+            <p className="text-gray-700 font-normal mb-4">Crea un nuevo producto en el sistema.</p>
+            <Link href="/admin/products/add">
+              <button className="w-full text-center px-4 py-2.5 text-base font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 transition-colors">
+                Agregar Producto
+              </button>
+            </Link>
+          </div>
+          {/* Tarjeta para Lista de Productos */}
+          <div className="w-full sm:w-80 bg-white shadow-lg rounded-lg p-6">
+            <h5 className="text-2xl font-bold tracking-tight text-gray-900 mb-2">Lista de Productos</h5>
+            <p className="text-gray-700 font-normal mb-4">Ver y gestionar todos los productos.</p>
+            <Link href="/admin/products">
+              <button className="w-full text-center px-4 py-2.5 text-base font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 transition-colors">
+                Ver Productos
+              </button>
+            </Link>
+          </div>
+          {/* Tarjeta para Lista de Usuarios */}
+          <div className="w-full sm:w-80 bg-white shadow-lg rounded-lg p-6">
+            <h5 className="text-2xl font-bold tracking-tight text-gray-900 mb-2">Lista de Usuarios</h5>
+            <p className="text-gray-700 font-normal mb-4">Ver y gestionar los usuarios del sistema.</p>
+            <Link href="/admin/users">
+              <button className="w-full text-center px-4 py-2.5 text-base font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 transition-colors">
+                Ver Usuarios
+              </button>
+            </Link>
+          </div>
+          {/* Tarjeta para Lista de Características */}
+          <div className="w-full sm:w-80 bg-white shadow-lg rounded-lg p-6">
+            <h5 className="text-2xl font-bold tracking-tight text-gray-900 mb-2">Lista de Características</h5>
+            <p className="text-gray-700 font-normal mb-4">Ver y gestionar las características de los productos.</p>
+            <Link href="/admin/features">
+              <button className="w-full text-center px-4 py-2.5 text-base font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 transition-colors">
+                Ver Características
+              </button>
+            </Link>
+          </div>
         </div>
-        {/* Tarjeta para Lista de Productos */}
-        <div className="max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-          <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Lista de Productos</h5>
-          <p className="mb-3 font-normal text-gray-700 dark:text-gray-400">Ver y gestionar todos los productos.</p>
-          <Link href="/admin/products">
-            <button className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:ring-4 focus:outline-none focus:ring-blue-300">
-              Ver Productos
-            </button>
-          </Link>
-        </div>
-        {/* Tarjeta para Lista de Usuarios */}
-        <div className="max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-          <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Lista de Usuarios</h5>
-          <p className="mb-3 font-normal text-gray-700 dark:text-gray-400">Ver y gestionar los usuarios del sistema.</p>
-          <Link href="/admin/users">
-            <button className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:ring-4 focus:outline-none focus:ring-blue-300">
-              Ver Usuarios
-            </button>
-          </Link>
-        </div>
-        {/* Tarjeta para Lista de Características */}
-        <div className="max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-          <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Lista de Características</h5>
-          <p className="mb-3 font-normal text-gray-700 dark:text-gray-400">Ver y gestionar las características de los productos.</p>
-          <Link href="/admin/features">
-            <button className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:ring-4 focus:outline-none focus:ring-blue-300">
-              Ver Características
-            </button>
-          </Link>
+        <div className="mt-8">
+          <LogoutButton />
         </div>
       </div>
-      <LogoutButton />
     </div>
   );
 }

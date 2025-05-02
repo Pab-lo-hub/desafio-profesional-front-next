@@ -143,10 +143,12 @@ export default function EditProductPage({ params }: EditProductPageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-8">
-        <div className="mx-auto max-w-7xl">
-          <h1 className="text-3xl font-bold mb-4">Editar Producto</h1>
-          <p>Cargando...</p>
+      <div className="min-h-screen bg-gradient-to-r from-indigo-50 to-blue-50 pt-16">
+        <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 lg:max-w-7xl lg:px-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">Editar Producto</h1>
+          <div className="bg-white shadow-lg rounded-lg p-6 text-center">
+            <p className="text-gray-900">Cargando...</p>
+          </div>
         </div>
       </div>
     );
@@ -154,23 +156,25 @@ export default function EditProductPage({ params }: EditProductPageProps) {
 
   if (error) {
     return (
-      <div className="min-h-screen p-8">
-        <div className="mx-auto max-w-7xl">
-          <h1 className="text-3xl font-bold mb-4">Editar Producto</h1>
-          <p className="text-red-500">{error}</p>
+      <div className="min-h-screen bg-gradient-to-r from-indigo-50 to-blue-50 pt-16">
+        <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 lg:max-w-7xl lg:px-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">Editar Producto</h1>
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+            <p>{error}</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="mx-auto max-w-7xl">
+    <div className="min-h-screen bg-gradient-to-r from-indigo-50 to-blue-50 pt-16">
+      <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 lg:max-w-7xl lg:px-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Editar Producto</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Editar Producto</h1>
           <Link
             href="/admin/products"
-            className="text-gray-600 hover:text-gray-900 flex items-center"
+            className="text-gray-600 hover:text-gray-900 flex items-center transition-colors"
           >
             <ArrowLeftIcon className="h-6 w-6 mr-2" />
             Volver
@@ -184,7 +188,8 @@ export default function EditProductPage({ params }: EditProductPageProps) {
                 type="text"
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                className="mt-1 block w-full border rounded-lg p-2"
+                placeholder="Ingrese el nombre del producto"
+                className="mt-1 block w-full border border-gray-300 rounded-lg p-3 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 hover:shadow-md transition-shadow placeholder:text-gray-400"
                 required
               />
             </div>
@@ -193,7 +198,9 @@ export default function EditProductPage({ params }: EditProductPageProps) {
               <textarea
                 value={formData.descripcion}
                 onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                className="mt-1 block w-full border rounded-lg p-2"
+                placeholder="Ingrese la descripción del producto"
+                className="mt-1 block w-full border border-gray-300 rounded-lg p-3 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 hover:shadow-md transition-shadow placeholder:text-gray-400"
+                rows={4}
               />
             </div>
             <div>
@@ -201,37 +208,37 @@ export default function EditProductPage({ params }: EditProductPageProps) {
               <select
                 value={formData.categoriaId}
                 onChange={(e) => setFormData({ ...formData, categoriaId: e.target.value })}
-                className="mt-1 block w-full border rounded-lg p-2"
+                className="mt-1 block w-full border border-gray-300 rounded-lg p-3 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 hover:shadow-md transition-shadow text-gray-900"
               >
-                <option value="">Sin categoría</option>
+                <option value="" className="text-gray-400">Sin categoría</option>
                 {categorias.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
+                  <option key={cat.id} value={cat.id} className="text-gray-900">
                     {cat.titulo}
                   </option>
                 ))}
               </select>
             </div>
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700">Imágenes</label>
               <input
                 type="file"
                 multiple
                 onChange={handleImageChange}
-                className="mt-1 block w-full"
+                className="mt-1 block w-full text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
               />
-            </div>
+            </div> */}
             <div>
               <label className="block text-sm font-medium text-gray-700">Características</label>
-              <div className="mt-2 grid grid-cols-2 gap-2">
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {features.map((feature) => (
-                  <label key={feature.id} className="flex items-center space-x-2">
+                  <label key={feature.id} className="flex items-center space-x-3">
                     <input
                       type="checkbox"
                       checked={selectedFeatures.includes(feature.id)}
                       onChange={() => handleFeatureToggle(feature.id)}
-                      className="h-4 w-4"
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                     />
-                    <span>{feature.nombre}</span>
+                    <span className="text-gray-900">{feature.nombre}</span>
                   </label>
                 ))}
               </div>
@@ -239,13 +246,13 @@ export default function EditProductPage({ params }: EditProductPageProps) {
             <div className="flex justify-end gap-4">
               <button
                 type="submit"
-                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 transition-colors"
               >
                 Guardar Cambios
               </button>
               <Link
                 href="/admin/products"
-                className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
+                className="bg-gray-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-700 focus:ring-4 focus:ring-gray-200 transition-colors"
               >
                 Cancelar
               </Link>

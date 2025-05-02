@@ -26,7 +26,9 @@ import {
   FaBluetooth,
   FaBatteryFull,
   FaQuestion,
+  FaParking,
 } from "react-icons/fa";
+import { TbAirConditioning } from "react-icons/tb";
 import { IconType } from "react-icons";
 import HeaderWithSession from "@/app/Components/HeaderWithSession";
 import Footer from "@/app/Components/Footer";
@@ -92,8 +94,10 @@ const availableIcons: { name: string; icon: IconType }[] = [
   { name: "FaSwimmingPool", icon: FaSwimmingPool },
   { name: "FaPaw", icon: FaPaw },
   { name: "FaSnowflake", icon: FaSnowflake },
-  { name: "Bluetooth", icon: FaBluetooth },
-  { name: "Battery", icon: FaBatteryFull },
+  { name: "FaBluetooth", icon: FaBluetooth },
+  { name: "FaBatteryFull", icon: FaBatteryFull },
+  { name: "FaParking", icon: FaParking },
+  { name: "TbAirConditioning", icon: TbAirConditioning },
 ];
 
 // Componente para mostrar la galería de imágenes del producto
