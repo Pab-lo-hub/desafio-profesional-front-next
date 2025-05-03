@@ -1,56 +1,45 @@
 "use client";
 
-// Importaciones necesarias
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import axios from "axios";
 import Link from "next/link";
 import Image from "next/image";
 
-// Interfaz para definir la estructura de un producto
 interface Product {
   id: number;
   nombre: string;
   descripcion: string;
-  price: string;
-  categoria_id: number;
+  price?: string;
+  categoria_id?: number;
   imagenes: { id: number; ruta: string }[];
 }
 
-// Props del componente
 interface ProductsProps {
-  categoryId: number | null; // ID de la categoría (puede ser nulo)
-  favoriteProducts?: Product[]; // Productos favoritos opcionales
+  categoryIds: number[] | null;
+  favoriteProducts?: Product[];
 }
 
-// Componente principal para mostrar productos
-const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
-  // Obtiene la sesión del usuario
+const Products = ({ categoryIds, favoriteProducts }: ProductsProps) => {
   const { data: session, status } = useSession();
-  // Estados para productos, favoritos, carrusel, carga, errores y paginación
   const [products, setProducts] = useState<Product[]>([]);
   const [randomProducts, setRandomProducts] = useState<Product[]>([]);
-  const [favorites, setFavorites] = useState<number[]>([]); // IDs de productos favoritos
+  const [favorites, setFavorites] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentSlides, setCurrentSlides] = useState<{ [key: number]: number }>({});
   const [currentPage, setCurrentPage] = useState(1);
-  const productsPerPage = 10; // Máximo de productos por página
-  // URL del backend desde variables de entorno
+  const productsPerPage = 10;
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
-  // Imagen de respaldo para errores
   const fallbackImage = "https://tailwindui.com/plus-assets/img/ecommerce-images/category-page-04-image-card-01.jpg";
 
-  // Efecto para cargar productos y favoritos
   useEffect(() => {
-    // Función para cargar productos
     const fetchProducts = async () => {
       try {
         if (!backendUrl) {
           throw new Error("NEXT_PUBLIC_BACKEND_URL no está definido en .env");
         }
 
-        // Si se proporcionan favoriteProducts, usarlos directamente
         if (favoriteProducts && favoriteProducts.length > 0) {
           setProducts(favoriteProducts);
           setRandomProducts(getRandomUniqueProducts(favoriteProducts));
@@ -58,12 +47,10 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
           return;
         }
 
-        // Construir la URL según si hay categoría
-        const url = categoryId
-          ? `${backendUrl}/api/productos?categoria_id=${categoryId}`
+        const url = categoryIds && categoryIds.length > 0
+          ? `${backendUrl}/api/productos?categoria_id=${categoryIds.join(",")}`
           : `${backendUrl}/api/productos`;
 
-        // Obtener productos del backend
         const response = await axios.get<Product[]>(url, {
           headers: { "Content-Type": "application/json" },
         });
@@ -80,7 +67,6 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
       }
     };
 
-    // Función para cargar favoritos
     const fetchFavorites = async () => {
       if (status === "authenticated" && session?.user?.id) {
         try {
@@ -95,25 +81,19 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
 
     fetchProducts();
     fetchFavorites();
-  }, [categoryId, status, session, favoriteProducts, backendUrl]);
+  }, [categoryIds, status, session, favoriteProducts, backendUrl]);
 
-  // Función para obtener productos aleatorios únicos
   const getRandomUniqueProducts = (allProducts: Product[]): Product[] => {
     if (allProducts.length === 0) return [];
-
     const shuffled = [...allProducts].sort(() => Math.random() - 0.5);
     return shuffled;
   };
 
-  // Calcular el número total de páginas
   const totalPages = Math.ceil(randomProducts.length / productsPerPage);
-
-  // Obtener los productos para la página actual
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
   const currentProducts = randomProducts.slice(indexOfFirstProduct, indexOfLastProduct);
 
-  // Funciones para la navegación de páginas
   const goToPreviousPage = () => {
     if (currentPage > 1) {
       setCurrentPage((prev) => prev - 1);
@@ -126,7 +106,6 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
     }
   };
 
-  // Funciones para el carrusel de imágenes
   const prevSlide = (productId: number, totalImages: number) => {
     setCurrentSlides((prev) => ({
       ...prev,
@@ -148,11 +127,10 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
     }));
   };
 
-  // Función para marcar/desmarcar un producto como favorito
   const toggleFavorite = async (productId: number, e: React.MouseEvent) => {
-    e.preventDefault(); // Evita que el clic en el botón active el enlace
+    e.preventDefault();
     if (status !== "authenticated" || !session?.user?.id) {
-      console.error("No se puede marcar favorito, estado de sesión:", { status, userId: session?.user?.id });
+      console.error("No se puede marcar y marcar favorito, estado de sesión:", { status, userId: session?.user?.id });
       alert("Debes iniciar sesión para marcar favoritos");
       return;
     }
@@ -163,7 +141,7 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
       console.log(`Intentando ${isFavorite ? "quitar" : "agregar"} favorito: userId=${userId}, productId=${productId}`);
       if (isFavorite) {
         await axios.delete(`${backendUrl}/api/favoritos/${productId}`, {
-          data: { userId }, // Enviar userId en el cuerpo
+          data: { userId },
         });
         setFavorites(favorites.filter((id) => id !== productId));
         console.log(`Favorito eliminado: productId=${productId}`);
@@ -181,7 +159,6 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
     }
   };
 
-  // Manejo de estados de carga y error
   if (loading) {
     return (
       <div className="text-center py-16 bg-gradient-to-r from-indigo-50 to-blue-50">
@@ -206,15 +183,10 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
     );
   }
 
-  // Renderizado del componente
   return (
-    // Contenedor con fondo degradado
     <div className="pt-2 bg-gradient-to-r from-indigo-50 to-blue-50">
-      {/* Contenedor responsivo */}
       <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-8 lg:max-w-7xl lg:px-8">
-        {/* Título principal */}
         <h2 className="text-3xl font-bold text-gray-900 mb-6">Productos</h2>
-        {/* Cuadrícula de productos */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-10">
           {currentProducts.length > 0 ? (
             currentProducts.map((product) => {
@@ -230,7 +202,6 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
               return (
                 <div key={product.id} className="group relative">
                   <Link href={`/products/${product.id}`} className="block">
-                    {/* Contenedor de imagen */}
                     <div className="relative aspect-square w-full rounded-lg bg-gray-200 overflow-hidden">
                       <Image
                         src={imageUrl}
@@ -244,7 +215,6 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
                           e.currentTarget.src = fallbackImage;
                         }}
                       />
-                      {/* Controles del carrusel */}
                       {totalImages > 1 && (
                         <>
                           <button
@@ -282,12 +252,12 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
                         </>
                       )}
                     </div>
-                    {/* Descripción del producto */}
                     <h3 className="mt-4 text-lg font-semibold text-gray-800">{product.descripcion}</h3>
-                    {/* Nombre del producto */}
                     <p className="mt-1 text-xl font-medium text-gray-900">{product.nombre || "Nombre no disponible"}</p>
+                    {product.price && (
+                      <p className="mt-1 text-md text-gray-600">{product.price}</p>
+                    )}
                   </Link>
-                  {/* Botón de favorito */}
                   <button
                     onClick={(e) => toggleFavorite(product.id, e)}
                     className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100"
@@ -315,7 +285,6 @@ const Products = ({ categoryId, favoriteProducts }: ProductsProps) => {
             <p className="text-gray-700 col-span-2">No hay productos disponibles en esta página.</p>
           )}
         </div>
-        {/* Controles de paginación */}
         {randomProducts.length > 0 && (
           <div className="mt-8 flex items-center justify-center space-x-4">
             <button

@@ -17,17 +17,17 @@ interface Product {
 }
 
 export default function Home() {
-  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [categoryIds, setCategoryIds] = useState<number[] | null>(null);
   const [searchResults, setSearchResults] = useState<Product[]>([]);
 
-  const handleCategorySelect = (id: number) => {
-    setCategoryId(id);
-    setSearchResults([]); // Limpiar resultados de búsqueda al seleccionar categoría
+  const handleCategorySelect = (ids: number[]) => {
+    setCategoryIds(ids.length > 0 ? ids : null);
+    setSearchResults([]); // Limpiar resultados de búsqueda al seleccionar categorías
   };
 
   const handleSearch = (results: Product[]) => {
     setSearchResults(results);
-    setCategoryId(null); // Limpiar categoría al realizar búsqueda
+    setCategoryIds(null); // Limpiar categorías al realizar búsqueda
   };
 
   return (
@@ -35,7 +35,7 @@ export default function Home() {
       <HeaderWithSession className="z-50" />
       <main className="flex-grow">
         <Buscador onSearch={handleSearch} />
-        <Products categoryId={categoryId} />
+        <Products categoryIds={categoryIds} favoriteProducts={searchResults.length > 0 ? searchResults : undefined} />
         <Categorias onCategorySelect={handleCategorySelect} />
       </main>
       <Footer />

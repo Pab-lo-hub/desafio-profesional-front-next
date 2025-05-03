@@ -1,9 +1,7 @@
 "use client";
 
-// Importaciones de dependencias
 import { useState, useEffect } from "react";
 
-// Interfaz para la estructura de una categoría
 interface Categoria {
   id: number;
   titulo: string;
@@ -11,23 +9,18 @@ interface Categoria {
   imagen?: string;
 }
 
-// Interfaz para las props del componente
 interface CategoriasProps {
-  onCategorySelect: (id: number) => void; // Función para manejar la selección de categoría
+  onCategorySelect: (ids: number[]) => void;
 }
 
-// Componente principal para mostrar categorías
 export default function Categorias({ onCategorySelect }: CategoriasProps) {
-  // Estados para categorías, carga y errores
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // URL del backend desde variables de entorno
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
-  // Imagen de respaldo para errores
   const fallbackImage = "https://tailwindui.com/plus-assets/img/ecommerce-images/category-page-04-image-card-01.jpg";
 
-  // Efecto para cargar categorías
   useEffect(() => {
     const fetchCategorias = async () => {
       try {
@@ -49,7 +42,28 @@ export default function Categorias({ onCategorySelect }: CategoriasProps) {
     fetchCategorias();
   }, [backendUrl]);
 
-  // Manejo de estados de carga y error
+  const handleCategoryClick = (id: number) => {
+    let updatedSelection;
+    if (selectedCategories.includes(id)) {
+      updatedSelection = selectedCategories.filter((catId) => catId !== id);
+    } else {
+      updatedSelection = [...selectedCategories, id];
+    }
+    setSelectedCategories(updatedSelection);
+    onCategorySelect(updatedSelection);
+  };
+
+  const handleClearFilters = () => {
+    setSelectedCategories([]);
+    onCategorySelect([]);
+  };
+
+  const removeCategory = (id: number) => {
+    const updatedSelection = selectedCategories.filter((catId) => catId !== id);
+    setSelectedCategories(updatedSelection);
+    onCategorySelect(updatedSelection);
+  };
+
   if (loading) {
     return <div className="text-center py-16 bg-gradient-to-r from-indigo-50 to-blue-50">Cargando...</div>;
   }
@@ -63,21 +77,49 @@ export default function Categorias({ onCategorySelect }: CategoriasProps) {
   }
 
   return (
-    // Contenedor con fondo degradado
     <div className="pt-8 bg-gradient-to-r from-indigo-50 to-blue-50">
-      {/* Contenedor responsivo */}
       <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-8 lg:max-w-7xl lg:px-8">
-        {/* Título principal */}
-        <h2 className="text-3xl font-bold text-gray-900 mb-6">Categorías</h2>
-        {/* Cuadrícula de categorías */}
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-3xl font-bold text-gray-900">Categorías</h2>
+          {selectedCategories.length > 0 && (
+            <button
+              onClick={handleClearFilters}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+        {selectedCategories.length > 0 && (
+          <div className="mb-6 flex flex-wrap gap-2">
+            {selectedCategories.map((id) => {
+              const categoria = categorias.find((cat) => cat.id === id);
+              return (
+                <span
+                  key={id}
+                  className="inline-flex items-center px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium"
+                >
+                  {categoria?.titulo || "Categoría desconocida"}
+                  <button
+                    onClick={() => removeCategory(id)}
+                    className="ml-2 text-indigo-600 hover:text-indigo-800 focus:outline-none"
+                  >
+                    ✕
+                  </button>
+                </span>
+              );
+            })}
+          </div>
+        )}
         <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8">
           {categorias.map((categoria) => (
             <button
               key={categoria.id}
-              onClick={() => onCategorySelect(categoria.id)}
-              className="group text-left"
+              onClick={() => handleCategoryClick(categoria.id)}
+              className={`group text-left rounded-xl overflow-hidden transition-shadow duration-300 ${
+                selectedCategories.includes(categoria.id) ? "shadow-lg shadow-indigo-400/50" : "shadow-sm"
+              } hover:shadow-xl hover:shadow-indigo-200/50`}
             >
-              {/* Imagen de la categoría */}
               <img
                 alt={categoria.descripcion || "Categoría sin descripción"}
                 src={
@@ -85,13 +127,12 @@ export default function Categorias({ onCategorySelect }: CategoriasProps) {
                     ? categoria.imagen
                     : `${backendUrl}${categoria.imagen || ""}`
                 }
-                className="aspect-square w-full rounded-lg bg-gray-200 object-cover group-hover:opacity-75 xl:aspect-7/8"
+                className="aspect-square w-full rounded-xl bg-gray-200 object-cover group-hover:opacity-75"
                 onError={(e) => {
                   e.currentTarget.src = fallbackImage;
                 }}
               />
-              {/* Título de la categoría */}
-              <h3 className="mt-4 text-lg font-semibold text-gray-800">{categoria.titulo}</h3>
+              <h3 className="mt-4 p-2 text-lg font-semibold text-gray-800">{categoria.titulo}</h3>
             </button>
           ))}
         </div>
